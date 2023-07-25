@@ -1,19 +1,8 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
-
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
+"""Preprocessing tools for the image analysis."""
 
 import os
 import cv2
 import numpy as np
-import warnings
 from skimage.color import rgb2gray
 from skimage.filters.thresholding import threshold_otsu
 from typing import List
@@ -101,10 +90,8 @@ def binarize(im: np.ndarray) -> np.ndarray:
     Returns:
         np.ndarray: Binarized image (0 for black, 1 for white).
     """
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        im_gray = rgb2gray(im)
-        threshold = threshold_otsu(im_gray)
+    im_gray = rgb2gray(im)
+    threshold = threshold_otsu(im_gray)
     bin_im = (im_gray > threshold) * 1
     return bin_im
 
@@ -265,4 +252,3 @@ def perform_elongation_on_folder(binarized_folder: str, elongated_frames_folder:
             elongated_image_path = os.path.join(elongated_frames_folder, filename)
             cv2.imwrite(elongated_image_path, elongated_image)
             print(f"Elongated image saved as {elongated_image_path}")
-

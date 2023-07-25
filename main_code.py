@@ -6,7 +6,7 @@
 
 import os
 import cv2
-import modules
+import preprocessing
 import csv
 
 def main():
@@ -23,13 +23,13 @@ def main():
     os.makedirs(elongated_frames_folder, exist_ok=True)
 
     # Perform background removal on the input folder and save the results in the output folder
-    modules.perform_background_removal(input_directory, bg_removal_folder)
+    preprocessing.perform_background_removal(input_directory, bg_removal_folder)
 
     # Perform binarization on the background removal folder and save the binarized images in the binarization folder
-    modules.perform_binarization_on_folder(bg_removal_folder, binarization_folder)
+    preprocessing.perform_binarization_on_folder(bg_removal_folder, binarization_folder)
 
     # Perform elongation of chains on the binarization folder and save the elongated images in the elongated frames folder
-    modules.perform_elongation_on_folder(binarization_folder, elongated_frames_folder)
+    preprocessing.perform_elongation_on_folder(binarization_folder, elongated_frames_folder)
 
     # Process each elongated image in the elongated frames folder
     results = []
@@ -39,7 +39,7 @@ def main():
             elongated_image_path = os.path.join(elongated_frames_folder, filename)
 
             # Determine original chain lengths for all bacterial chains in the elongated image
-            original_chain_lengths = modules.calculate_original_chain_lengths(elongated_image_path)
+            original_chain_lengths = preprocessing.calculate_original_chain_lengths(elongated_image_path)
 
             # Append the results to the list
             for chain_number, chain_length in enumerate(original_chain_lengths, start=1):
