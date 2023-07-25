@@ -1,11 +1,6 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
+"""Detect the chains and there length on an image."""
 
 import os
-import cv2
 import preprocessing
 import csv
 
@@ -54,18 +49,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-

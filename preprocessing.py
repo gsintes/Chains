@@ -7,7 +7,7 @@ from skimage.color import rgb2gray
 from skimage.filters.thresholding import threshold_otsu
 from typing import List
 
-def estimate_background(image_sequence):
+def get_background(image_sequence):
     """
     Estimate the background image using the minima method.
 
