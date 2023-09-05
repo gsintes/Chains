@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 import matplotlib.image as mpim
 from skimage.filters.thresholding import threshold_otsu
+from skimage import morphology
 
 
 def get_background(image_sequence: List[str]) -> np.ndarray:
@@ -36,10 +37,14 @@ def binarize(im: np.ndarray) -> np.ndarray:
         np.ndarray: Binarized image (0 for black, 1 for white).
     """
     threshold = threshold_otsu(im)
-    bin_im = (im > threshold) * 1
+    bin_im = (im > threshold)
     return bin_im
 
-def elongate_objects(binarized_image: np.ndarray, kernel_size: int = 3, iterations: int = 4) -> np.ndarray:
+def remove_small_objects(bin_image: np.ndarray) -> np.ndarray:
+    """Remove the small objects in a binerized image."""
+    return morphology.remove_small_objects(bin_image, min_size=80, connectivity=2)
+
+def elongate_objects(binarized_image: np.ndarray, kernel_size: int = 7) -> np.ndarray:
     """
     Elongate the objects in a binarized image using dilation to fill the gaps in the chains.
 
@@ -52,8 +57,8 @@ def elongate_objects(binarized_image: np.ndarray, kernel_size: int = 3, iteratio
         np.ndarray: The elongated image.
     """
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
-    dilated_image = cv2.dilate(binarized_image, kernel, iterations=iterations)
-
+    dilated_image = morphology.binary_dilation(binarized_image, kernel)
+    dilated_image = morphology.binary_dilation(dilated_image, kernel)
     return dilated_image
 
 
