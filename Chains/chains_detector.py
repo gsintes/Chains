@@ -37,11 +37,16 @@ class ChainDetector(BaseDetector):
             List of masks as [(mask, left_corner), ...].
 
         """
+        cv2.imshow("Image", image)
+        cv2.waitKey(0)
+        print(np.amin(image), np.amax(image))
         if int(self.params["lightBack"]) == 0:
-            image = cv2.subtract(self.background, image)
+            image = self.background - image
         else:
-            image = cv2.subtract(image, self.background)
-
+            image = image - self.background
+        print(np.amin(image), np.amax(image))
+        cv2.imshow("subtracted", image)
+        cv2.waitKey(0)
         __, image = cv2.threshold(image, int(
             self.params["thresh"]), 255, cv2.THRESH_BINARY)
 

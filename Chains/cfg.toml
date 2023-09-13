@@ -1,7 +1,7 @@
 title = "FastTrack cfg"
 
 [parameters]
-lightBack = 0
+lightBack = 1
 maxArea = 170
 maxDist = 200
 maxTime = 100
