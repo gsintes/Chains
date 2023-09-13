@@ -2,6 +2,9 @@ import toml
 import sqlite3
 import pathlib
 import os
+import shutil
+from typing import Dict, List
+
 import numpy as np
 
 
@@ -10,7 +13,7 @@ class Configuration():
 
     """
 
-    def read_toml(self, path: str):
+    def read_toml(self, path: str) -> Dict[str, int]:
         """Read a configuration file from text file.
 
         Parameters
@@ -24,14 +27,11 @@ class Configuration():
             Parameters.
 
         """
-        try:
-            self.params = toml.load(path)
-            return self.params["parameters"]
-        except Exception as e:
-            print(e)
-            return None
+        self.params = toml.load(path)
+        return self.params["parameters"]
 
-    def read_db(self, path: str):
+
+    def read_db(self, path: str) -> Dict[str, int]:
         """Read a configuration file from database.
 
         Parameters
@@ -45,20 +45,17 @@ class Configuration():
             Parameters.
 
         """
-        try:
-            cnx = sqlite3.connect(pathlib.Path(
-                os.path.abspath(path)).as_uri() + "?mode=ro", uri=True)
-            query = cnx.execute("SELECT parameter, value FROM parameter;")
-            self.params = dict()
-            for param, value in query:
-                self.params[param] = value
-            cnx.close()
-            return self.params
-        except Exception as e:
-            print(e)
-            return None
+        cnx = sqlite3.connect(pathlib.Path(
+            os.path.abspath(path)).as_uri() + "?mode=ro", uri=True)
+        query = cnx.execute("SELECT parameter, value FROM parameter;")
+        self.params = dict()
+        for param, value in query:
+            self.params[param] = value
+        cnx.close()
+        return self.params
 
-    def write_toml(self, path: str):
+
+    def write_toml(self, path: str) -> None:
         """Write a configuration file.
 
         Parameters
@@ -67,13 +64,11 @@ class Configuration():
             Path pointing to the toml file.
 
         """
-        try:
-            with open(path, 'w') as f:
-                toml.dump(self.params, f)
-        except Exception as e:
-            print(e)
+        with open(path, 'w') as f:
+            toml.dump(self.params, f)
 
-    def get_key(self, key: str):
+
+    def get_key(self, key: str) -> int:
         """Get a parameter from its key.
 
         Parameters
@@ -89,7 +84,7 @@ class Configuration():
         """
         return self.params["parameters"][key]
 
-    def get_keys(self, keys: str):
+    def get_keys(self, keys: str) -> List[int]:
         """Get parameters from their keys.
 
         Parameters
@@ -111,7 +106,7 @@ class Result():
 
     """
 
-    def add_data(self, dat):
+    def add_data(self, dat) -> None:
         """Append data in the database.
 
             Parameters
@@ -142,9 +137,13 @@ class Result():
         self.cnx.commit()
         cursor.close()
 
-    def __init__(self, path: str):
+    def __init__(self, path: str) -> None:
         path = os.path.abspath(path + "/Tracking_Result/")
-        os.makedirs(path)
+        try:
+            os.makedirs(path)
+        except FileExistsError:
+            shutil.rmtree(path)
+            os.makedirs(path)
         self.cnx = sqlite3.connect(path + "/tracking.db")
         cursor = self.cnx.cursor()
         cursor.execute("CREATE TABLE tracking ( xHead REAL, yHead REAL, tHead REAL, xTail REAL,"
@@ -157,5 +156,5 @@ class Result():
         self.cnx.commit()
         cursor.close()
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.cnx.close()

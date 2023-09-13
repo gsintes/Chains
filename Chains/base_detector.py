@@ -1,15 +1,15 @@
 import abc
+from typing import List, Tuple, Dict, Any
+
 import numpy as np
 import cv2
 
 
 class BaseDetector(metaclass=abc.ABCMeta):
-    """Abstract class to implement an objects detector.
-
-    """
+    """Abstract class to implement an objects detector."""
 
     @abc.abstractmethod
-    def detect(self, image):
+    def detect(self, image) -> List[Tuple[np.ndarray, Tuple[int, int]]]:
         """Abstract method to be implemented.
 
         This method will take a full image with all the objects to detect and will return
@@ -30,7 +30,7 @@ class BaseDetector(metaclass=abc.ABCMeta):
         """
         pass
 
-    def process(self, image):
+    def process(self, image) -> List[Dict[str, Dict[str, Any]]]:
         """Process one image.
 
         Parameters
@@ -44,7 +44,7 @@ class BaseDetector(metaclass=abc.ABCMeta):
             List of detected objects and their features.
 
         """
-        detections = []
+        detections: List[Dict[str, Dict[str, Any]]] = []
         for mask, coordinate in self.detect(image):
             contours, _ = cv2.findContours(
                 mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -125,7 +125,7 @@ class BaseDetector(metaclass=abc.ABCMeta):
         return {"center": [x, y], "orientation": orientation, "major_axis": maj_axis, "minor_axis": min_axis}
 
     @staticmethod
-    def modulo(angle):
+    def modulo(angle) -> float:
         """Provide the mathematical 2pi modulo.
 
 
@@ -142,7 +142,7 @@ class BaseDetector(metaclass=abc.ABCMeta):
         """
         return angle - 2 * np.pi * np.floor(angle / (2 * np.pi))
 
-    def get_direction(self, mask, features):
+    def get_direction(self, mask, features) -> Tuple[bool, np.ndarray, np.ndarray]:
         """Get the object direction.
 
         The object orientation is updated with the correct direction.

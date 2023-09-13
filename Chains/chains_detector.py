@@ -1,18 +1,20 @@
 """Detector for chain detection."""
 
+import os
+from typing import List, Tuple, Dict
+
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt
 
 import preprocessing
 from base_detector import BaseDetector
 
 class ChainDetector(BaseDetector):
-    """Implement the chain detector.
-
-    """
-
-    def __init__(self, params):
+    """Implement the chain detector. """
+    def __init__(self,
+                 params: Dict[str, int],
+                 save_folder: str,
+                 visualisation: bool = False) -> None:
         """Initialize the detector.
 
         Parameters
@@ -22,8 +24,11 @@ class ChainDetector(BaseDetector):
 
         """
         self.params = params
+        self.save_folder = save_folder
+        self.visualisation = visualisation
+        self.count = 0
 
-    def detect(self, image):
+    def detect(self, image) -> List[Tuple[np.ndarray,Tuple[int, int]]]:
         """Detect objects
 
         Parameters
@@ -53,10 +58,13 @@ class ChainDetector(BaseDetector):
             
         image = image * 255
         image = image.astype(np.uint8)
-        
+
+        if self.visualisation:
+            cv2.imwrite(os.path.join(self.save_folder, f"processed{self.count:06d}.png"), image)
+
         contours, _ = cv2.findContours(
             image, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-        masks = []
+        masks: List[Tuple[np.ndarray, Tuple[int, int]]] = []
         for i in contours:
             area = cv2.contourArea(i)
             if area < int(self.params["maxArea"]) and area > int(self.params["minArea"]):
@@ -65,10 +73,11 @@ class ChainDetector(BaseDetector):
                 cv2.drawContours(mask, [i], 0, 255, -1, 8)
                 masks.append(
                     (np.copy(mask[rect[1]:rect[1] + rect[3], rect[0]:rect[0] + rect[2]]), rect[0:2]))
+        self.count += 1
 
         return masks
 
-    def set_background(self, image):
+    def set_background(self, image) -> None:
         """Set the background image.
 
         Parameters
