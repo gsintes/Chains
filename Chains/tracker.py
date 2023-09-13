@@ -1,12 +1,10 @@
 import numpy as np
-from .base_detector import BaseDetector
+from base_detector import BaseDetector
 from scipy.optimize import linear_sum_assignment
 
 
 class Tracker():
-    """Tracker class to determine assignment from previous and current coordinates.
-
-    """
+    """Tracker class to determine assignment from previous and current coordinates."""
 
     def __init__(self, params=None, detector=None):
         """Initialize the tracker.
@@ -36,7 +34,7 @@ class Tracker():
         self.params = params.copy()
         self.is_init = False
 
-    def set_detector(self, detector):
+    def set_detector(self, detector: BaseDetector):
         """Set the detector.
 
         Parameters
@@ -48,7 +46,7 @@ class Tracker():
         self.detector = detector
         self.is_init = False
 
-    def initialize(self, image):
+    def initialize(self, image: np.ndarray):
         """Initialize the tracker.
 
         Parameters
@@ -75,7 +73,7 @@ class Tracker():
             self.im += 1
             return self.prev_detection
 
-    def process(self, image):
+    def process(self, image: np.ndarray):
         """Process an image.
 
         Parameters
@@ -109,7 +107,7 @@ class Tracker():
             return [j for i, j in enumerate(self.current_detection) if i not in losts]
 
     @staticmethod
-    def angle_difference(a, b):
+    def angle_difference(a: float, b: float):
         """Get the minimal difference, a-b), between two angles.
 
         Parameters
@@ -130,7 +128,7 @@ class Tracker():
         return -(BaseDetector.modulo(a - b + np.pi) - np.pi)
 
     @staticmethod
-    def div(a, b):
+    def div(a: float, b: float):
         """Division by zero, a/0=0.
 
         Parameters
@@ -220,7 +218,6 @@ class Tracker():
 
             row, col = linear_sum_assignment(cost)
 
-            # TODO: optimize
             assignment = []
             for i, __ in enumerate(prev):
                 if i in row and (i, col[list(row).index(i)]) in valid:

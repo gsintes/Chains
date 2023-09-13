@@ -28,6 +28,7 @@ class Configuration():
             self.params = toml.load(path)
             return self.params["parameters"]
         except Exception as e:
+            print(e)
             return None
 
     def read_db(self, path: str):

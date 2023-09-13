@@ -1,6 +1,6 @@
 """Detector for chain detection."""
 
-from .base_detector import BaseDetector
+from base_detector import BaseDetector
 import numpy as np
 import cv2
 
