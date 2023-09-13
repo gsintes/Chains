@@ -21,10 +21,6 @@ params = config.read_toml("/Users/sintes/Documents/Python/Chains/Chains/cfg.toml
 # Set up detector
 detector = ChainDetector(params)
 background = preprocessing.get_background(image_list)
-print(np.amin(background), np.amax(background))
-print(background.shape)
-cv2.imshow("Background", background)
-cv2.waitKey(0)
 detector.set_background(background)
 
 # Set up tracker

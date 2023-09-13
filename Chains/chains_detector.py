@@ -1,11 +1,11 @@
 """Detector for chain detection."""
 
-from base_detector import BaseDetector
 import numpy as np
 import cv2
+import matplotlib.pyplot as plt
 
 import preprocessing
-
+from base_detector import BaseDetector
 
 class ChainDetector(BaseDetector):
     """Implement the chain detector.
@@ -37,28 +37,25 @@ class ChainDetector(BaseDetector):
             List of masks as [(mask, left_corner), ...].
 
         """
-        cv2.imshow("Image", image)
-        cv2.waitKey(0)
-        print(np.amin(image), np.amax(image))
+     
         if int(self.params["lightBack"]) == 0:
             image = self.background - image
         else:
             image = image - self.background
-        print(np.amin(image), np.amax(image))
-        cv2.imshow("subtracted", image)
-        cv2.waitKey(0)
-        __, image = cv2.threshold(image, int(
-            self.params["thresh"]), 255, cv2.THRESH_BINARY)
 
+        image = preprocessing.binarize(image)
         image = preprocessing.remove_small_objects(image)
         image = preprocessing.elongate_objects(image)
-
+      
         if int(self.params["xBottom"]) != 0 and int(self.params["yBottom"]) != 0:
             image = image[int(self.params["yTop"]):int(self.params["yBottom"]), int(
                 self.params["xTop"]):int(self.params["xBottom"])]
-
+            
+        image = image * 255
+        image = image.astype(np.uint8)
+        
         contours, _ = cv2.findContours(
-            image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            image, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         masks = []
         for i in contours:
             area = cv2.contourArea(i)
