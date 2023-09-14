@@ -78,10 +78,6 @@ class ChainDetector(BaseDetector):
         self.count += 1
 
         return masks
-    
-    def real_length(self, length: float) -> float:
-        """Convert the length to real length before dilation."""
-        return length - 2 * self.nb_iter * self.kernel_size
 
     def set_background(self, image: np.ndarray) -> None:
         """Set the background image.
