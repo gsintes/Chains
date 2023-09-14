@@ -127,12 +127,12 @@ class Result():
                             data["1"]["center"][0], data["1"]["center"][1], data["1"]["orientation"],
                             data["2"]["center"][0], data["2"]["center"][1], data["2"]["orientation"],
                             0, data["3"]["area"], data["3"]["perim"],
-                            data["0"]["major_axis"], data["0"]["minor_axis"], np.sqrt(
-                               1-(data["0"]["minor_axis"]/data["0"]["major_axis"])**2),
-                            data["1"]["major_axis"], data["1"]["minor_axis"], np.sqrt(
-                               1-(data["1"]["minor_axis"]/data["1"]["major_axis"])**2),
-                            data["2"]["major_axis"], data["2"]["minor_axis"], np.sqrt(
-                               1-(data["2"]["minor_axis"]/data["2"]["major_axis"])**2),
+                            data["0"]["major_axis"], data["0"]["minor_axis"],
+                            np.sqrt(1 - (data["0"]["minor_axis"] / data["0"]["major_axis"]) ** 2),
+                            data["1"]["major_axis"], data["1"]["minor_axis"],
+                            np.sqrt(1 - (data["1"]["minor_axis"] / data["1"]["major_axis"]) ** 2),
+                            data["2"]["major_axis"], data["2"]["minor_axis"],
+                            np.sqrt(1 - (data["2"]["minor_axis"] / data["2"]["major_axis"]) ** 2),
                             data["3"]["time"], data["3"]["id"]))
         self.cnx.commit()
         cursor.close()

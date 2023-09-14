@@ -1,16 +1,19 @@
 """Tracker tools for assignement of object between current and previous objects."""
 
 from typing import List, Dict, Tuple, Any
+import os
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
+import cv2
+import matplotlib.colors as mcolors
 
 from base_detector import BaseDetector
 
 class Tracker():
     """Tracker class to determine assignment from previous and current coordinates."""
 
-    def __init__(self, params: Dict[str, int] = {}) -> None:
+    def __init__(self, params: Dict[str, int] = {}, save_folder: str = "", visualization: bool = True) -> None:
         """Initialize the tracker.
 
         Parameters
@@ -24,6 +27,9 @@ class Tracker():
         if params:
             self.params = params.copy()
         self.is_init = False
+        self.save_folder = save_folder
+        self.count = 0
+        self.visualization = visualization
 
     def set_params(self, params: Dict[str, int]) -> None:
         """Set the parameters.
@@ -108,6 +114,9 @@ class Tracker():
                 j["3"]["id"] = self.id[i]
             self.im += 1
             self.prev_detection = self.current_detection
+            if self.visualization:
+                self.make_verif_image(image)
+            self.count += 1
             return [j for i, j in enumerate(self.current_detection) if i not in losts]
         return []
 
@@ -318,3 +327,28 @@ class Tracker():
             counter.pop(i)
             idty.pop(i)
         return current, counter, idty
+    
+    @staticmethod
+    def hex_to_rgb(value):
+        value = value.lstrip('#')
+        lv = len(value)
+        return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+
+    def make_verif_image(self, image: np.ndarray) -> None:
+        """Make a image showing the detection."""
+        colors = [Tracker.hex_to_rgb(color) for color in mcolors.TABLEAU_COLORS.values()]
+        image_to_draw = cv2.merge([image, image, image])
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        for i, object in enumerate(self.current_detection):
+            body_features = object["2"]
+            color = colors[i % len(colors)]
+            center = (int(body_features["center"][0]), int(body_features["center"][1]))
+            center_writing = (int(body_features["center"][0]),
+                              int(body_features["center"][1] + body_features["major_axis"]))
+            image_to_draw = cv2.ellipse(img=image_to_draw,
+                                center=center,
+                                axes=(int(body_features["major_axis"]), int(body_features["minor_axis"])),
+                                angle=body_features["orientation"], startAngle=0, endAngle=360,
+                                color=color, thickness=2)
+            image_to_draw = cv2.putText(image_to_draw, str(i), org=center_writing, fontFace=font, fontScale=1, color=color)
+        cv2.imwrite(os.path.join(self.save_folder, f"tracked{self.count:06d}.png"), image_to_draw)

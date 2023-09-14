@@ -27,6 +27,8 @@ class ChainDetector(BaseDetector):
         self.save_folder = save_folder
         self.visualisation = visualisation
         self.count = 0
+        self.kernel_size = 7
+        self.nb_iter = 2
 
     def detect(self, image: np.ndarray) -> List[Tuple[np.ndarray,Tuple[int, int]]]:
         """Detect objects
@@ -50,7 +52,7 @@ class ChainDetector(BaseDetector):
 
         image = preprocessing.binarize(image)
         image = preprocessing.remove_small_objects(image)
-        image = preprocessing.elongate_objects(image)
+        image = preprocessing.elongate_objects(image, self.nb_iter, self.kernel_size)
       
         if int(self.params["xBottom"]) != 0 and int(self.params["yBottom"]) != 0:
             image = image[int(self.params["yTop"]):int(self.params["yBottom"]), int(
@@ -76,6 +78,10 @@ class ChainDetector(BaseDetector):
         self.count += 1
 
         return masks
+    
+    def real_length(self, length: float) -> float:
+        """Convert the length to real length before dilation."""
+        return length - 2 * self.nb_iter * self.kernel_size
 
     def set_background(self, image: np.ndarray) -> None:
         """Set the background image.

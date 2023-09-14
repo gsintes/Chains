@@ -30,10 +30,11 @@ saver = Result(folder_path)
 # Set up detector
 detector = ChainDetector(params, processed_path, visualisation=True)
 background = preprocessing.get_background(image_list)
+cv2.imwrite(os.path.join(folder_path, "Figure/background.png"), background)
 detector.set_background(background)
 
 # Set up tracker
-tracker = Tracker(params)
+tracker = Tracker(params, tracked_path)
 tracker.set_params(params)
 tracker.set_detector(detector)
 

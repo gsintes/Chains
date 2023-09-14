@@ -30,6 +30,11 @@ class BaseDetector(metaclass=abc.ABCMeta):
         """
         pass
 
+    @abc.abstractclassmethod
+    def real_length(self, length: float) -> float:
+        """Convert the length to real length before dilation."""
+        pass
+    
     def process(self, image: np.ndarray) -> List[Dict[str, Dict[str, Any]]]:
         """Process one image.
 
