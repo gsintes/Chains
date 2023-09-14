@@ -1,12 +1,16 @@
+"""Tracker tools for assignement of object between current and previous objects."""
+
+from typing import List, Dict, Tuple, Any
+
 import numpy as np
-from base_detector import BaseDetector
 from scipy.optimize import linear_sum_assignment
 
+from base_detector import BaseDetector
 
 class Tracker():
     """Tracker class to determine assignment from previous and current coordinates."""
 
-    def __init__(self, params=None, detector=None):
+    def __init__(self, params=None, detector=None) -> None:
         """Initialize the tracker.
 
         Parameters
@@ -22,7 +26,7 @@ class Tracker():
         self.detector = detector
         self.is_init = False
 
-    def set_params(self, params):
+    def set_params(self, params: Dict[str, int]) -> None:
         """Set the parameters.
 
         Parameters
@@ -34,7 +38,7 @@ class Tracker():
         self.params = params.copy()
         self.is_init = False
 
-    def set_detector(self, detector: BaseDetector):
+    def set_detector(self, detector: BaseDetector) -> None:
         """Set the detector.
 
         Parameters
@@ -46,7 +50,7 @@ class Tracker():
         self.detector = detector
         self.is_init = False
 
-    def initialize(self, image: np.ndarray):
+    def initialize(self, image: np.ndarray) -> List[Dict[str, Dict[str, Any]]]:
         """Initialize the tracker.
 
         Parameters
@@ -65,7 +69,7 @@ class Tracker():
             self.is_init = True
             self.max_id = len(self.prev_detection)
             self.id = list(range(self.max_id))
-            self.lost = [0]*len(self.prev_detection)
+            self.lost = [0] * len(self.prev_detection)
             self.im = 0
             for i, j in enumerate(self.prev_detection):
                 j["3"]["time"] = self.im
@@ -73,7 +77,7 @@ class Tracker():
             self.im += 1
             return self.prev_detection
 
-    def process(self, image: np.ndarray):
+    def process(self, image: np.ndarray) -> List[Dict[str, Dict[str, Any]]]:
         """Process an image.
 
         Parameters
@@ -107,7 +111,7 @@ class Tracker():
             return [j for i, j in enumerate(self.current_detection) if i not in losts]
 
     @staticmethod
-    def angle_difference(a: float, b: float):
+    def angle_difference(a: float, b: float) -> float:
         """Get the minimal difference, a-b), between two angles.
 
         Parameters
@@ -128,7 +132,7 @@ class Tracker():
         return -(BaseDetector.modulo(a - b + np.pi) - np.pi)
 
     @staticmethod
-    def div(a: float, b: float):
+    def div(a: float, b: float) -> float:
         """Division by zero, a/0=0.
 
         Parameters
@@ -149,7 +153,7 @@ class Tracker():
         else:
             return 0
 
-    def compute_cost(self, var, norm):
+    def compute_cost(self, var: List[float], norm: List[float]) -> float:
         """Compute the cost.
 
         Parameters
@@ -170,7 +174,9 @@ class Tracker():
             cost += self.div(i, j)
         return cost
 
-    def assign(self, prev, current):
+    def assign(self,
+               prev: List[Dict[str, Dict[str, Any]]],
+               current: List[Dict[str, Dict[str, Any]]]) -> List[int]:
         """Find the optimal assignent.
 
         Parameters
@@ -218,7 +224,7 @@ class Tracker():
 
             row, col = linear_sum_assignment(cost)
 
-            assignment = []
+            assignment: List[int] = []
             for i, __ in enumerate(prev):
                 if i in row and (i, col[list(row).index(i)]) in valid:
                     assignment.append(col[list(row).index(i)])
@@ -227,7 +233,7 @@ class Tracker():
 
         return assignment
 
-    def reassign(self, past, current, order):
+    def reassign(self, past: List[int], current: List[int], order: List[int]) -> List[int]:
         """Reassign current based on order.
 
         Parameters
@@ -256,7 +262,7 @@ class Tracker():
 
         return tmp
 
-    def find_lost(self, assignment):
+    def find_lost(self, assignment: List[int]) -> List[int]:
         """Find object lost at previous step.
 
         Parameters
@@ -272,7 +278,11 @@ class Tracker():
         """
         return [i for i, j in enumerate(assignment) if j == -1]
 
-    def clean(self, current, counter, lost, idty):
+    def clean(self,
+              current: List[int],
+              counter: List[int],
+              lost: List[int],
+              idty: List[int]) -> Tuple[List[int], List[int], List[int]]:
         """Delete objects that were lost.
         Only counter is copied in this function. Other lists act as pointer.
 
