@@ -10,7 +10,7 @@ from base_detector import BaseDetector
 class Tracker():
     """Tracker class to determine assignment from previous and current coordinates."""
 
-    def __init__(self, params=None, detector=None) -> None:
+    def __init__(self, params: Dict[str, int] = {}) -> None:
         """Initialize the tracker.
 
         Parameters
@@ -23,7 +23,6 @@ class Tracker():
         """
         if params:
             self.params = params.copy()
-        self.detector = detector
         self.is_init = False
 
     def set_params(self, params: Dict[str, int]) -> None:
@@ -76,6 +75,7 @@ class Tracker():
                 j["3"]["id"] = self.id[i]
             self.im += 1
             return self.prev_detection
+        return []
 
     def process(self, image: np.ndarray) -> List[Dict[str, Dict[str, Any]]]:
         """Process an image.
@@ -109,6 +109,7 @@ class Tracker():
             self.im += 1
             self.prev_detection = self.current_detection
             return [j for i, j in enumerate(self.current_detection) if i not in losts]
+        return []
 
     @staticmethod
     def angle_difference(a: float, b: float) -> float:
@@ -169,7 +170,7 @@ class Tracker():
             Cost.
 
         """
-        cost = 0
+        cost = 0.
         for i, j in zip(var, norm):
             cost += self.div(i, j)
         return cost
@@ -197,9 +198,9 @@ class Tracker():
 
         """
         if len(prev) == 0:
-            assignment = []
+            assignment: List[int] = []
         elif len(current) == 0:
-            assignment = [-1]*len(prev)
+            assignment = [-1] * len(prev)
         else:
             cost = np.zeros((len(prev), len(current)))
             valid = []
@@ -224,7 +225,7 @@ class Tracker():
 
             row, col = linear_sum_assignment(cost)
 
-            assignment: List[int] = []
+            assignment = []
             for i, __ in enumerate(prev):
                 if i in row and (i, col[list(row).index(i)]) in valid:
                     assignment.append(col[list(row).index(i)])
@@ -233,7 +234,10 @@ class Tracker():
 
         return assignment
 
-    def reassign(self, past: List[int], current: List[int], order: List[int]) -> List[int]:
+    def reassign(self,
+                 past: List[Dict[str, Dict[str, Any]]],
+                 current: List[Dict[str, Dict[str, Any]]],
+                 order: List[int]) -> List[Dict[str, Dict[str, Any]]]:
         """Reassign current based on order.
 
         Parameters
@@ -279,10 +283,10 @@ class Tracker():
         return [i for i, j in enumerate(assignment) if j == -1]
 
     def clean(self,
-              current: List[int],
+              current: List[Dict[str, Dict[str, Any]]],
               counter: List[int],
               lost: List[int],
-              idty: List[int]) -> Tuple[List[int], List[int], List[int]]:
+              idty: List[int]) -> Tuple[List[Dict[str, Dict[str, Any]]], List[int], List[int]]:
         """Delete objects that were lost.
         Only counter is copied in this function. Other lists act as pointer.
 

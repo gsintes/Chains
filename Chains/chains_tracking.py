@@ -39,15 +39,15 @@ tracker.set_detector(detector)
 
 camera = cv2.VideoCapture(
     "{}/Chains%04d.tif".format(folder_path))
-dat = tracker.initialize(cv2.cvtColor(camera.read()[1], cv2.COLOR_BGR2GRAY))
-saver.add_data(dat)
+im_data = tracker.initialize(cv2.cvtColor(camera.read()[1], cv2.COLOR_BGR2GRAY))
+saver.add_data(im_data)
 
 ret = True
 while (ret):
     ret, frame = camera.read()
     if ret:
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        dat = tracker.process(frame)
-        saver.add_data(dat)
+        im_data = tracker.process(frame)
+        saver.add_data(im_data)
 
 camera.release()

@@ -28,7 +28,7 @@ class ChainDetector(BaseDetector):
         self.visualisation = visualisation
         self.count = 0
 
-    def detect(self, image) -> List[Tuple[np.ndarray,Tuple[int, int]]]:
+    def detect(self, image: np.ndarray) -> List[Tuple[np.ndarray,Tuple[int, int]]]:
         """Detect objects
 
         Parameters
@@ -77,7 +77,7 @@ class ChainDetector(BaseDetector):
 
         return masks
 
-    def set_background(self, image) -> None:
+    def set_background(self, image: np.ndarray) -> None:
         """Set the background image.
 
         Parameters

@@ -9,7 +9,7 @@ class BaseDetector(metaclass=abc.ABCMeta):
     """Abstract class to implement an objects detector."""
 
     @abc.abstractmethod
-    def detect(self, image) -> List[Tuple[np.ndarray, Tuple[int, int]]]:
+    def detect(self, image: np.ndarray) -> List[Tuple[np.ndarray, Tuple[int, int]]]:
         """Abstract method to be implemented.
 
         This method will take a full image with all the objects to detect and will return
@@ -30,7 +30,7 @@ class BaseDetector(metaclass=abc.ABCMeta):
         """
         pass
 
-    def process(self, image) -> List[Dict[str, Dict[str, Any]]]:
+    def process(self, image: np.ndarray) -> List[Dict[str, Dict[str, Any]]]:
         """Process one image.
 
         Parameters
@@ -54,8 +54,7 @@ class BaseDetector(metaclass=abc.ABCMeta):
             body = self.get_features(mask)
             is_left, rotated_mask, rot = self.get_direction(mask, body)
 
-            body_center = np.intp(
-                rot @ np.asarray([body["center"][0], body["center"][1], 1]))
+            body_center = [int(i) for i in np.floor(rot @ np.asarray([body["center"][0], body["center"][1], 1]))]
             rot = cv2.invertAffineTransform(rot)
 
             mask_tail = rotated_mask[:, body_center[0]::]
@@ -88,7 +87,7 @@ class BaseDetector(metaclass=abc.ABCMeta):
                 detections.append({"3": data, "2": body, "0": tail, "1": head})
         return detections
 
-    def get_features(self, mask):
+    def get_features(self, mask: np.ndarray) -> Dict[str, Any]:
         """Get the object features using equivalent ellipse.
 
 
@@ -125,7 +124,7 @@ class BaseDetector(metaclass=abc.ABCMeta):
         return {"center": [x, y], "orientation": orientation, "major_axis": maj_axis, "minor_axis": min_axis}
 
     @staticmethod
-    def modulo(angle) -> float:
+    def modulo(angle: float) -> float:
         """Provide the mathematical 2pi modulo.
 
 
@@ -142,7 +141,7 @@ class BaseDetector(metaclass=abc.ABCMeta):
         """
         return angle - 2 * np.pi * np.floor(angle / (2 * np.pi))
 
-    def get_direction(self, mask, features) -> Tuple[bool, np.ndarray, np.ndarray]:
+    def get_direction(self, mask: np.ndarray, features: Dict[str, Any]) -> Tuple[bool, np.ndarray, np.ndarray]:
         """Get the object direction.
 
         The object orientation is updated with the correct direction.
@@ -166,12 +165,12 @@ class BaseDetector(metaclass=abc.ABCMeta):
 
         """
         rot = cv2.getRotationMatrix2D(center=(
-            mask.shape[1]/2, mask.shape[0]/2), angle=-(features["orientation"]*180)/np.pi, scale=1)
-        new_size = [mask.shape[0]*np.abs(rot[0, 1]) + mask.shape[1]*np.abs(rot[0, 0]),
-                    mask.shape[0]*np.abs(rot[0, 0]) + mask.shape[1]*np.abs(rot[0, 1])]
-        rot[0, 2] += new_size[0]/2 - mask.shape[1]/2
-        rot[1, 2] += new_size[1]/2 - mask.shape[0]/2
-        rotated_mask = cv2.warpAffine(mask, rot, np.intp(new_size))
+            mask.shape[1] / 2, mask.shape[0] / 2), angle=-(features["orientation"] * 180) / np.pi, scale=1)
+        new_size = [int(mask.shape[0] * np.abs(rot[0, 1]) + mask.shape[1] * np.abs(rot[0, 0])),
+                    int(mask.shape[0] * np.abs(rot[0, 0]) + mask.shape[1] * np.abs(rot[0, 1]))]
+        rot[0, 2] += new_size[0] / 2 - mask.shape[1] / 2
+        rot[1, 2] += new_size[1] / 2 - mask.shape[0] / 2
+        rotated_mask = cv2.warpAffine(mask, rot, new_size)
         dist = np.sum(rotated_mask, axis=0, dtype=np.float64)
         dist /= np.sum(dist)
         indexes = np.arange(1, len(dist)+1, dtype=np.float64)
