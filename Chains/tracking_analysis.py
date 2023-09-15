@@ -56,6 +56,7 @@ class Analysis():
             self.data.loc[self.data["id"] == id, "bactNumber"] = nb_bact
 
     def process(self) -> pd.DataFrame:
+        """Performs the analysis."""
         self.calculate_velocity()
         self.calculate_chain_length()
         ids = self.data["id"].unique()
@@ -69,12 +70,25 @@ class Analysis():
                              "bact_number": bact_number,
                              "velocity": mean_vel})
 
-        
+def plot_grouped_data(grouped: pd.DataFrame) -> None:
+    """Plot the grouped data."""
+    grouped.plot("bact_number", "velocity", "scatter")
+
+    bact_nb = grouped_data["bact_number"].unique()
+    print(bact_nb)
+    vel: List[float] = []
+    std_vel: List[float] = []
+    for nb in bact_nb:
+        vel.append(grouped.loc[grouped["bact_number"] == nb, "velocity"].mean())
+        std_vel.append(grouped.loc[grouped["bact_number"] == nb, "velocity"].std())
+
+    plt.figure()
+    plt.errorbar(x=bact_nb, y=vel, yerr=std_vel, linestyle="", marker="s")
+    plt.show(block=True)
 
 if __name__ == "__main__":
     folder_path = "/Users/sintes/Desktop/ImageSeq"
     analysis = Analysis(folder_path)
     grouped_data = analysis.process()
-
-    grouped_data.plot("bact_number", "velocity", "scatter")
-    plt.show(block=True)
+    plot_grouped_data(grouped_data)
+    
