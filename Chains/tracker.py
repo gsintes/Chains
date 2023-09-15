@@ -218,8 +218,8 @@ class Tracker():
                 for j, k in enumerate(current):
                     current_coord = k[str(int(self.params["spot"]))]
 
-                    distance = np.sqrt((prev_coord["center"][0] - current_coord["center"][0])**2 + (
-                        prev_coord["center"][1] - current_coord["center"][1])**2)
+                    distance = np.sqrt((prev_coord["center"][0] - current_coord["center"][0]) ** 2 + (
+                        prev_coord["center"][1] - current_coord["center"][1]) ** 2)
                     angle = np.abs(self.angle_difference(
                         prev_coord["orientation"], current_coord["orientation"]))
                     area = np.abs(l["3"]["area"] - k["3"]["area"])
