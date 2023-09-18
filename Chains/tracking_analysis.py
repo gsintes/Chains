@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+np.seterr(all='raise')
 
 class Analysis():
     """Class to perform the analysis of chain tracking data."""
@@ -43,15 +44,32 @@ class Analysis():
                 velocity = pos_diff / time_diff
                 self.data.loc[velocity.index, ax[0] + "Vel"] = velocity
         self.data["Velocity"] = np.sqrt(self.data["xVel"] ** 2+ self.data["yVel"] ** 2)
-        
 
-    def calculate_chain_length(self) -> pd.DataFrame:
+    @staticmethod   
+    def detect_plateau_value(sequence: pd.Series):
+        """Detect a plateau in a serie."""
+        try:
+            window_size = 10
+            list_seq = list(sequence)
+            std_moving = sequence.rolling(window_size).std()
+            mean = std_moving.mean()
+            std = std_moving.std()
+
+            values: List[float] = []
+            for i, val_std in enumerate(std_moving):
+                if val_std < mean - std:
+                    values.append(list_seq[i])
+            return np.mean(values)
+        except FloatingPointError:
+            return sequence.mean()
+
+    def calculate_chain_length(self) -> pd.DataFrame: 
         """Calculate the chain length."""
         ids = self.data["id"].unique()
         ids.sort()
         for id in ids:
             data = self.data.loc[self.data["id"] == id]
-            mean_length = data["bodyMajorAxisLength"].mean()
+            mean_length = analysis.detect_plateau_value(data["bodyMajorAxisLength"]) 
             nb_bact = np.rint(mean_length / self.bactLength)
             self.data.loc[self.data["id"] == id, "bactNumber"] = nb_bact
 
@@ -75,7 +93,6 @@ def plot_grouped_data(grouped: pd.DataFrame) -> None:
     grouped.plot("bact_number", "velocity", "scatter")
 
     bact_nb = grouped_data["bact_number"].unique()
-    print(bact_nb)
     vel: List[float] = []
     std_vel: List[float] = []
     for nb in bact_nb:
@@ -90,5 +107,6 @@ if __name__ == "__main__":
     folder_path = "/Users/sintes/Desktop/ImageSeq"
     analysis = Analysis(folder_path)
     grouped_data = analysis.process()
+    print(grouped_data)
     plot_grouped_data(grouped_data)
     

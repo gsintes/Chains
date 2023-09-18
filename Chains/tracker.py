@@ -341,6 +341,7 @@ class Tracker():
         font = cv2.FONT_HERSHEY_SIMPLEX
         for i, object in enumerate(self.current_detection):
             body_features = object["2"]
+            id_obj = object["3"]["id"]
             color = colors[i % len(colors)]
             center = (int(body_features["center"][0]), int(body_features["center"][1]))
             center_writing = (int(body_features["center"][0]),
@@ -350,5 +351,5 @@ class Tracker():
                                 axes=(int(body_features["major_axis"]), int(body_features["minor_axis"])),
                                 angle=body_features["orientation"], startAngle=0, endAngle=360,
                                 color=color, thickness=2)
-            image_to_draw = cv2.putText(image_to_draw, str(i), org=center_writing, fontFace=font, fontScale=1, color=color)
+            image_to_draw = cv2.putText(image_to_draw, str(id_obj), org=center_writing, fontFace=font, fontScale=1, color=color)
         cv2.imwrite(os.path.join(self.save_folder, f"tracked{self.count:06d}.png"), image_to_draw)
