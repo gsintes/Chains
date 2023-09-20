@@ -44,7 +44,6 @@ class ChainDetector(BaseDetector):
             List of masks as [(mask, left_corner), ...].
 
         """
-     
         if int(self.params["lightBack"]) == 0:
             image = self.background - image
         else:

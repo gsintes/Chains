@@ -342,7 +342,7 @@ class Tracker():
         for i, object in enumerate(self.current_detection):
             body_features = object["2"]
             id_obj = object["3"]["id"]
-            color = colors[i % len(colors)]
+            color = colors[id_obj % len(colors)]
             center = (int(body_features["center"][0]), int(body_features["center"][1]))
             center_writing = (int(body_features["center"][0]),
                               int(body_features["center"][1] + body_features["major_axis"]))

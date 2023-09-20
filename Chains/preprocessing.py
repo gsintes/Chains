@@ -4,7 +4,6 @@ from typing import List
 
 import cv2
 import numpy as np
-import matplotlib.image as mpim
 from skimage.filters.thresholding import threshold_otsu
 from skimage import morphology
 
@@ -19,10 +18,10 @@ def get_background(image_sequence: List[str]) -> np.ndarray:
     Returns:
         np.ndarray: The estimated background image.
     """
-    background = mpim.imread(image_sequence[0])
+    background = cv2.imread(image_sequence[0], cv2.IMREAD_UNCHANGED)
 
     for im_name in image_sequence:
-        current_frame = mpim.imread(im_name)
+        current_frame = cv2.imread(im_name, cv2.IMREAD_UNCHANGED)
         background = np.minimum(background, current_frame)
     return background
 
