@@ -105,8 +105,7 @@ class BaseDetector(metaclass=abc.ABCMeta):
         i = moments["mu20"]
         j = moments["mu11"]
         k = moments["mu02"]
-
-        if i + j - k != 0:
+        if i - k != 0:
             orientation = (0.5 * np.arctan((2 * j) / (i - k)) +
                            (i < k) * (np.pi * 0.5))
             orientation += 2 * np.pi * (orientation < 0)

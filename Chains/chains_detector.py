@@ -60,6 +60,7 @@ class ChainDetector(BaseDetector):
         image = image * 255
         image = image.astype(np.uint8)
 
+        im_shape = image.shape
         if self.visualisation:
             cv2.imwrite(os.path.join(self.save_folder, f"processed{self.count:06d}.png"), image)
 
@@ -69,11 +70,12 @@ class ChainDetector(BaseDetector):
         for i in contours:
             area = cv2.contourArea(i)
             if area < int(self.params["maxArea"]) and area > int(self.params["minArea"]):
-                rect = cv2.boundingRect(i)
-                mask = np.zeros_like(image)
-                cv2.drawContours(mask, [i], 0, 255, -1, 8)
-                masks.append(
-                    (np.copy(mask[rect[1]:rect[1] + rect[3], rect[0]:rect[0] + rect[2]]), rect[0:2]))
+                if not preprocessing.contour_on_the_side(i, im_shape):
+                    rect = cv2.boundingRect(i)
+                    mask = np.zeros_like(image)
+                    cv2.drawContours(mask, [i], 0, 255, -1, 8)
+                    masks.append(
+                        (np.copy(mask[rect[1]:rect[1] + rect[3], rect[0]:rect[0] + rect[2]]), rect[0:2]))
         self.count += 1
 
         return masks

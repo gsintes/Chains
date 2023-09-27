@@ -5,13 +5,14 @@ import shutil
 
 import cv2
 import numpy as np
-import matplotlib.image as mpim
 
 from chains_detector import ChainDetector
 from tracker import Tracker
 from data import Result
 import data as dat
 import preprocessing
+
+folder_path = "/Users/sintes/Desktop/ImageSeq"
 
 def max_intensity_video(image_list: List[str]) -> int:
     """Detect the maximum intensity in a video."""
@@ -28,12 +29,11 @@ def convert_16to8bits(image: str, i: int, max_int: int) -> None:
     new_name = image.replace(im_name, f"tmp/Image{i:07d}.png")
     im16 = cv2.imread(image, cv2.IMREAD_UNCHANGED)
     if im16.dtype == "uint16":
-        im8 = (im16 * 0.98 * 2 ** 8 / max_int).astype("uint8")
+        im8 = (im16 * 0.99 * 2 ** 8 / max_int).astype("uint8")
     else:
         im8 = im16
     cv2.imwrite(new_name, im8)
 
-folder_path = "/Users/sintes/Desktop/Martyna/PhD/chaines/2020-12-08_13h01m43s"
 tmp = os.path.join(folder_path, "tmp")
 try:
     os.mkdir(tmp)
@@ -41,6 +41,7 @@ except FileExistsError:
     pass
 
 image_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".tif")]
+image_list.sort()
 max_int = max_intensity_video(image_list)
 for i, im in enumerate(image_list):
     convert_16to8bits(im, i, max_int)

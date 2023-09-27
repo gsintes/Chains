@@ -1,6 +1,6 @@
 """Preprocessing tools for the image analysis."""
 
-from typing import List
+from typing import List, Tuple
 
 import cv2
 import numpy as np
@@ -60,6 +60,19 @@ def elongate_objects(binarized_image: np.ndarray, nb_iter: int = 2, kernel_size:
     for _ in range(nb_iter):
         dilated_image = morphology.binary_dilation(dilated_image, kernel)
     return dilated_image
+
+def contour_on_the_side(contour: List[List[List[int]]], im_shape: Tuple[int, int]) -> bool:
+    """Detect if a contour is touching the side of the image."""
+    for i in contour:
+        point = i[0]
+        y = point[0]
+        x = point[1]
+        
+        if x == 0 or x == im_shape[0] -1:
+            return True
+        if y == 0 or y == im_shape[1] -1:
+            return True
+    return False
 
 
 # def get_elegonation(kernel_size: int = 3, iterations: int = 4) -> float:
