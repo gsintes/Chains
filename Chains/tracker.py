@@ -114,9 +114,11 @@ class Tracker():
                 j["3"]["id"] = self.id[i]
             self.im += 1
             self.prev_detection = self.current_detection
+            self.lost_ids = losts
             if self.visualization:
                 self.make_verif_image(image)
             self.count += 1
+            
             return [j for i, j in enumerate(self.current_detection) if i not in losts]
         return []
 
@@ -235,7 +237,7 @@ class Tracker():
             row, col = linear_sum_assignment(cost)
 
             assignment = []
-            for i, __ in enumerate(prev):
+            for i, _ in enumerate(prev):
                 if i in row and (i, col[list(row).index(i)]) in valid:
                     assignment.append(col[list(row).index(i)])
                 else:
@@ -339,17 +341,19 @@ class Tracker():
         colors = [Tracker.hex_to_rgb(color) for color in mcolors.TABLEAU_COLORS.values()]
         image_to_draw = cv2.merge([image, image, image])
         font = cv2.FONT_HERSHEY_SIMPLEX
-        for i, object in enumerate(self.current_detection):
-            body_features = object["2"]
+        for object in self.current_detection:
             id_obj = object["3"]["id"]
-            color = colors[id_obj % len(colors)]
-            center = (int(body_features["center"][0]), int(body_features["center"][1]))
-            center_writing = (int(body_features["center"][0]),
-                              int(body_features["center"][1] + body_features["major_axis"]))
-            image_to_draw = cv2.ellipse(img=image_to_draw,
-                                center=center,
-                                axes=(int(body_features["major_axis"]), int(body_features["minor_axis"])),
-                                angle=body_features["orientation"], startAngle=0, endAngle=360,
-                                color=color, thickness=2)
-            image_to_draw = cv2.putText(image_to_draw, str(id_obj), org=center_writing, fontFace=font, fontScale=1, color=color)
+            if id_obj not in self.lost_ids:
+                body_features = object["2"]
+                
+                color = colors[id_obj % len(colors)]
+                center = (int(body_features["center"][0]), int(body_features["center"][1]))
+                center_writing = (int(body_features["center"][0]),
+                                int(body_features["center"][1] + body_features["major_axis"]))
+                image_to_draw = cv2.ellipse(img=image_to_draw,
+                                    center=center,
+                                    axes=(int(body_features["major_axis"]), int(body_features["minor_axis"])),
+                                    angle=body_features["orientation"], startAngle=0, endAngle=360,
+                                    color=color, thickness=2)
+                image_to_draw = cv2.putText(image_to_draw, str(id_obj), org=center_writing, fontFace=font, fontScale=1, color=color)
         cv2.imwrite(os.path.join(self.save_folder, f"tracked{self.count:06d}.png"), image_to_draw)
