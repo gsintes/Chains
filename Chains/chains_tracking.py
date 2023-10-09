@@ -2,6 +2,7 @@
 import os
 from typing import List
 import shutil
+import multiprocessing as mp
 
 import cv2
 import numpy as np
@@ -34,57 +35,75 @@ def convert_16to8bits(image: str, i: int, max_int: int) -> None:
         im8 = im16
     cv2.imwrite(new_name, im8)
 
-tmp = os.path.join(folder_path, "tmp")
-try:
-    os.mkdir(tmp)
-except FileExistsError:
-    pass
+def main(folder_path: str) -> None:
+    print(folder_path)
+    tmp = os.path.join(folder_path, "tmp")
+    try:
+        os.mkdir(tmp)
+    except FileExistsError:
+        pass
 
-image_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".tif")]
-image_list.sort()
-max_int = max_intensity_video(image_list)
-for i, im in enumerate(image_list):
-    convert_16to8bits(im, i, max_int)
+    image_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".tif")]
+    image_list.sort()
+    max_int = max_intensity_video(image_list)
+    for i, im in enumerate(image_list):
+        convert_16to8bits(im, i, max_int)
 
-image_list = [os.path.join(tmp, file) for file in os.listdir(tmp) if file.endswith(".png")]
+    image_list = [os.path.join(tmp, file) for file in os.listdir(tmp) if file.endswith(".png")]
 
-processed_path = os.path.join(folder_path, "Figure", "Processed")
-tracked_path = os.path.join(folder_path, "Figure","Tracked")
-shutil.rmtree(processed_path, ignore_errors=True)
-shutil.rmtree(tracked_path, ignore_errors=True)
-os.makedirs(tracked_path)
-os.makedirs(processed_path)
+    tracked_path = os.path.join(folder_path, "Figure","Tracked")
+    shutil.rmtree(tracked_path, ignore_errors=True)
+    os.makedirs(tracked_path)
+    
 
-# Load configuration
-config = dat.Configuration()
-params = config.read_toml("/Users/sintes/Documents/Python/Chains/Chains/cfg.toml")
-# Data saver
-saver = Result(folder_path)
+    # Load configuration
+    config = dat.Configuration()
+    params = config.read_toml("/Users/sintes/Documents/Python/Chains/Chains/cfg.toml")
+    # Data saver
+    saver = Result(folder_path)
 
-# Set up detector
-detector = ChainDetector(params, processed_path, visualisation=True)
-background = preprocessing.get_background(image_list)
-cv2.imwrite(os.path.join(folder_path, "Figure/background.png"), background)
-detector.set_background(background)
+    # Set up detector
+
+    visualisation_processed = True
+    if visualisation_processed :
+        processed_path = os.path.join(folder_path, "Figure", "Processed")
+        shutil.rmtree(processed_path, ignore_errors=True)
+        os.makedirs(processed_path)
+        detector = ChainDetector(params, processed_path, visualisation=False)
+    else:
+        detector = ChainDetector(params, "", visualisation=False)
+    background = preprocessing.get_background(image_list)
+    cv2.imwrite(os.path.join(folder_path, "Figure/background.png"), background)
+    detector.set_background(background)
 
 
-# Set up tracker
-tracker = Tracker(params, tracked_path) 
-tracker.set_params(params)
-tracker.set_detector(detector)
+    # Set up tracker
+    tracker = Tracker(params, tracked_path) 
+    tracker.set_params(params)
+    tracker.set_detector(detector)
 
-camera = cv2.VideoCapture(
-    "{}/Image%07d.png".format(tmp))
-im_data = tracker.initialize(cv2.cvtColor(camera.read()[1], cv2.COLOR_BGR2GRAY))
-saver.add_data(im_data)
+    camera = cv2.VideoCapture(
+        "{}/Image%07d.png".format(tmp))
+    im_data = tracker.initialize(cv2.cvtColor(camera.read()[1], cv2.COLOR_BGR2GRAY))
+    saver.add_data(im_data)
 
-ret = True
-while (ret):
-    ret, frame = camera.read()
-    if ret:
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        im_data = tracker.process(frame)
-        saver.add_data(im_data)
+    ret = True
+    while (ret):
+        ret, frame = camera.read()
+        if ret:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            im_data = tracker.process(frame)
+            saver.add_data(im_data)
 
-camera.release()
-shutil.rmtree(tmp)
+    camera.release()
+    shutil.rmtree(tmp)
+
+if __name__=="__main__":
+    parent_folder = "/Volumes/Chains/Chains"
+    folder_list = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
+
+    # pool = mp.Pool(mp.cpu_count() - 1)
+    # pool.starmap_async(tracking, folder_list)
+    # pool.close()
+    for f in folder_list:
+        main(f)
