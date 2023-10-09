@@ -1,6 +1,6 @@
 
 import os
-from typing import List
+from typing import List, Tuple
 import shutil
 import multiprocessing as mp
 
@@ -100,10 +100,10 @@ def main(folder_path: str) -> None:
 
 if __name__=="__main__":
     parent_folder = "/Volumes/Chains/Chains"
-    folder_list = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
+    folder_list: List[Tuple[str]] = [(os.path.join(parent_folder, f),) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))][0: 3]
 
-    # pool = mp.Pool(mp.cpu_count() - 1)
-    # pool.starmap_async(tracking, folder_list)
-    # pool.close()
-    for f in folder_list:
-        main(f)
+    pool = mp.Pool(mp.cpu_count() - 1)
+    pool.starmap_async(main, folder_list).get()
+    pool.close()
+    # for f in folder_list:
+    #     main(f)
