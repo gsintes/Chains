@@ -29,7 +29,7 @@ def calculate_velocity(n: int, alpha: float) -> float:
     return Bf / (Af + A0)
 
 res = {}
-alpha_val = [0, 1, 1.5]
+alpha_val = [0, 1]
 
 plt.figure()
 

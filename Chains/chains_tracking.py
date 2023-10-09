@@ -12,7 +12,7 @@ from data import Result
 import data as dat
 import preprocessing
 
-folder_path = "/Users/sintes/Desktop/ImageSeq"
+folder_path = "/Users/sintes/Desktop/Martyna/PhD/chaines/2020-12-08_13h00m36s"
 
 def max_intensity_video(image_list: List[str]) -> int:
     """Detect the maximum intensity in a video."""
@@ -75,8 +75,6 @@ tracker.set_detector(detector)
 
 camera = cv2.VideoCapture(
     "{}/Image%07d.png".format(tmp))
-# camera.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc('Y','1','6',' '))
-# camera.set(cv2.CAP_PROP_CONVERT_RGB, 0)
 im_data = tracker.initialize(cv2.cvtColor(camera.read()[1], cv2.COLOR_BGR2GRAY))
 saver.add_data(im_data)
 

@@ -91,6 +91,8 @@ class Analysis():
 def plot_grouped_data(grouped: pd.DataFrame) -> None:
     """Plot the grouped data."""
     grouped.plot("bact_number", "velocity", "scatter")
+    plt.xlabel("Number of bacteria")
+    plt.ylabel("Velocity")
 
     bact_nb = grouped_data["bact_number"].unique()
     vel: List[float] = []
@@ -100,13 +102,15 @@ def plot_grouped_data(grouped: pd.DataFrame) -> None:
         std_vel.append(grouped.loc[grouped["bact_number"] == nb, "velocity"].std())
 
     plt.figure()
-    plt.errorbar(x=bact_nb, y=vel, yerr=std_vel, linestyle="", marker="s")
+    plt.errorbar(x=bact_nb, y=vel / vel[0], yerr=std_vel / vel[0], linestyle="", marker="s")
+    plt.xlabel("Number of bacteria")
+    plt.ylabel("Velocity")
     plt.show(block=True)
 
 if __name__ == "__main__":
     folder_path = "/Users/sintes/Desktop/ImageSeq"
     analysis = Analysis(folder_path)
     grouped_data = analysis.process()
-    print(grouped_data)
+    # print(grouped_data)
     plot_grouped_data(grouped_data)
     
