@@ -345,7 +345,6 @@ class Tracker():
             id_obj = object["3"]["id"]
             if id_obj not in self.lost_ids:
                 body_features = object["2"]
-                
                 color = colors[id_obj % len(colors)]
                 center = (int(body_features["center"][0]), int(body_features["center"][1]))
                 center_writing = (int(body_features["center"][0]),
@@ -353,7 +352,7 @@ class Tracker():
                 image_to_draw = cv2.ellipse(img=image_to_draw,
                                     center=center,
                                     axes=(int(body_features["major_axis"]), int(body_features["minor_axis"])),
-                                    angle=body_features["orientation"], startAngle=0, endAngle=360,
+                                    angle=180 * body_features["orientation"] / np.pi, startAngle=0, endAngle=360,
                                     color=color, thickness=2)
                 image_to_draw = cv2.putText(image_to_draw, str(id_obj), org=center_writing, fontFace=font, fontScale=1, color=color)
         cv2.imwrite(os.path.join(self.save_folder, f"tracked{self.count:06d}.png"), image_to_draw)

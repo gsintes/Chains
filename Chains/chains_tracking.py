@@ -43,7 +43,7 @@ def main(folder_path: str) -> None:
     except FileExistsError:
         pass
 
-    image_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".tif")]
+    image_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".tif")][:100]
     image_list.sort()
     max_int = max_intensity_video(image_list)
     for i, im in enumerate(image_list):
@@ -69,7 +69,7 @@ def main(folder_path: str) -> None:
         processed_path = os.path.join(folder_path, "Figure", "Processed")
         shutil.rmtree(processed_path, ignore_errors=True)
         os.makedirs(processed_path)
-        detector = ChainDetector(params, processed_path, visualisation=False)
+        detector = ChainDetector(params, processed_path, visualisation=True)
     else:
         detector = ChainDetector(params, "", visualisation=False)
     background = preprocessing.get_background(image_list)
@@ -99,11 +99,10 @@ def main(folder_path: str) -> None:
     shutil.rmtree(tmp)
 
 if __name__=="__main__":
-    parent_folder = "/Volumes/Chains/Chains"
-    folder_list: List[Tuple[str]] = [(os.path.join(parent_folder, f),) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))][0: 3]
+    # parent_folder = "/Volumes/Chains/Chains"
+    # folder_list: List[Tuple[str]] = [(os.path.join(parent_folder, f),) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))][0: 3]
 
-    pool = mp.Pool(mp.cpu_count() - 1)
-    pool.starmap_async(main, folder_list).get()
-    pool.close()
-    # for f in folder_list:
-    #     main(f)
+    # pool = mp.Pool(mp.cpu_count() - 1)
+    # pool.starmap_async(main, folder_list).get()
+    # pool.close()
+    main("/Users/sintes/Desktop/NASGuillaume/Chains/2023-10-06_13h10m14s")
