@@ -64,7 +64,7 @@ def main(folder_path: str) -> None:
 
     # Set up detector
 
-    visualisation_processed = True
+    visualisation_processed = False
     if visualisation_processed :
         processed_path = os.path.join(folder_path, "Figure", "Processed")
         shutil.rmtree(processed_path, ignore_errors=True)
@@ -105,4 +105,4 @@ if __name__=="__main__":
     # pool = mp.Pool(mp.cpu_count() - 1)
     # pool.starmap_async(main, folder_list).get()
     # pool.close()
-    main("/Users/sintes/Desktop/NASGuillaume/Chains/2023-10-06_13h10m14s")
+    main("/Users/sintes/Desktop/NASGuillaume/Chains/2023-10-06_13h23m23s")
