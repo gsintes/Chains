@@ -43,7 +43,7 @@ def main(folder_path: str) -> None:
     except FileExistsError:
         pass
 
-    image_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".tif")][:100]
+    image_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".tif")]
     image_list.sort()
     max_int = max_intensity_video(image_list)
     for i, im in enumerate(image_list):

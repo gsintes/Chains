@@ -43,7 +43,7 @@ def remove_small_objects(bin_image: np.ndarray) -> np.ndarray:
     """Remove the small objects in a binerized image."""
     return morphology.remove_small_objects(bin_image, min_size=50, connectivity=2)
 
-def elongate_objects(binarized_image: np.ndarray, nb_iter: int = 2, kernel_size: int = 7) -> np.ndarray:
+def elongate_objects(binarized_image: np.ndarray, nb_iter: int = 2, kernel_size: int = 5) -> np.ndarray:
     """
     Elongate the objects in a binarized image using dilation to fill the gaps in the chains.
 
