@@ -61,7 +61,7 @@ def main(folder_path: str) -> None:
 
     # Load configuration
     config = dat.Configuration()
-    params = config.read_toml("/Users/sintes/Documents/Python/Chains/Chains/cfg.toml")
+    params = config.read_toml(os.path.join(os.getcwd(),"cfg.toml"))
     # Data saver
     saver = Result(folder_path)
 
@@ -102,7 +102,7 @@ def main(folder_path: str) -> None:
     shutil.rmtree(tmp)
 
 if __name__=="__main__":
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains"
+    parent_folder = "/run/user/1000/gvfs/afp-volume:host=Suspension_Lab.local,volume=Guillaume/Chains"
     folder_list: List[Tuple[str]] = [(os.path.join(parent_folder, f),) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
 
     # pool = mp.Pool(mp.cpu_count() - 1)
