@@ -99,10 +99,11 @@ def main(folder_path: str) -> None:
     shutil.rmtree(tmp)
 
 if __name__=="__main__":
-    # parent_folder = "/Volumes/Chains/Chains"
-    # folder_list: List[Tuple[str]] = [(os.path.join(parent_folder, f),) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))][0: 3]
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains"
+    folder_list: List[Tuple[str]] = [(os.path.join(parent_folder, f),) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
 
     # pool = mp.Pool(mp.cpu_count() - 1)
     # pool.starmap_async(main, folder_list).get()
     # pool.close()
-    main("/Users/sintes/Desktop/NASGuillaume/Chains/2023-10-06_13h23m23s")
+    for f in folder_list:
+        main(f[0])
