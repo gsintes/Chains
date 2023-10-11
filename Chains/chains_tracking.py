@@ -51,9 +51,12 @@ def main(folder_path: str) -> None:
 
     image_list = [os.path.join(tmp, file) for file in os.listdir(tmp) if file.endswith(".png")]
 
+    
     tracked_path = os.path.join(folder_path, "Figure","Tracked")
-    shutil.rmtree(tracked_path, ignore_errors=True)
-    os.makedirs(tracked_path)
+    try:
+        os.mkdir(tracked_path)
+    except FileExistsError:
+        pass
     
 
     # Load configuration
