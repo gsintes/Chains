@@ -1,14 +1,44 @@
 """Preprocessing tools for the image analysis."""
 
 from typing import List, Tuple
+import time
 
 import cv2
 import numpy as np
 from skimage.filters.thresholding import threshold_otsu
 from skimage import morphology
 
+def timeit(func):
+    # @wraps(func)
+    def timeit_wrapper(*args, **kwargs):
+        start_time = time.perf_counter()
+        result = func(*args, **kwargs)
+        end_time = time.perf_counter()
+        total_time = end_time - start_time
+        print(f'Function {func.__name__} took {total_time:.4f} s')
+        return result
+    return timeit_wrapper
 
-def get_background(image_sequence: List[str]) -> np.ndarray:
+def max_intensity_video(image_list: List[str]) -> int:
+    """Detect the maximum intensity in a video."""
+    max_int = 0
+    for im_name in image_list:
+        im = cv2.imread(im_name, cv2.IMREAD_UNCHANGED)
+        max_int = max(max_int, np.amax(im))
+    return max_int
+
+
+def convert_16to8bits(image: str, max_int: int) -> np.ndarray:
+    """Convert 16bit image to 8bit and store it in a temp folder."""
+    im16 = cv2.imread(image, cv2.IMREAD_UNCHANGED)
+    if im16.dtype == "uint16":
+        im8 = (im16 * 0.99 * 2 ** 8 / max_int).astype("uint8")
+    else:
+        im8 = im16
+    return im8
+
+@timeit
+def get_background(image_sequence: List[str], max_int: int) -> np.ndarray:
     """
     Estimate the background image using the minima method.
 
@@ -18,10 +48,10 @@ def get_background(image_sequence: List[str]) -> np.ndarray:
     Returns:
         np.ndarray: The estimated background image.
     """
-    background = cv2.imread(image_sequence[0], cv2.IMREAD_UNCHANGED)
+    background = convert_16to8bits(image_sequence[0], max_int)
 
     for im_name in image_sequence:
-        current_frame = cv2.imread(im_name, cv2.IMREAD_UNCHANGED)
+        current_frame = convert_16to8bits(im_name, max_int)
         background = np.minimum(background, current_frame)
     return background
 
