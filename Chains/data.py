@@ -142,8 +142,8 @@ class Result():
         try:
             os.makedirs(path)
         except FileExistsError:
-            shutil.rmtree(path)
-            os.makedirs(path)
+            os.remove(os.path.join(path, "tracking.db"))
+         
         self.cnx = sqlite3.connect(path + "/tracking.db")
         cursor = self.cnx.cursor()
         cursor.execute("CREATE TABLE tracking ( xHead REAL, yHead REAL, tHead REAL, xTail REAL,"
