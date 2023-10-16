@@ -4,6 +4,8 @@ from typing import List, Tuple
 import shutil
 import multiprocessing as mp
 import json
+from datetime import datetime
+
 import cv2
 import numpy as np
 
@@ -13,9 +15,8 @@ from data import Result
 import data as dat
 import preprocessing
 
-@preprocessing.timeit
-def main(folder_path: str) -> None:
-    print(folder_path)
+def main(folder_path: str) -> str:
+    exp_name = folder_path.split("/")[-1]
 
     image_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".tif")]
     image_list.sort()
@@ -75,17 +76,20 @@ def main(folder_path: str) -> None:
         frame = preprocessing.convert_16to8bits(im, max_int)
         im_data = tracker.process(frame)
         saver.add_data(im_data)
-
+    return f"{exp_name} done at {datetime.now()}\n"
 
 if __name__=="__main__":
     parent_folder = "/run/user/1000/gvfs/afp-volume:host=Suspension_Lab.local,volume=Guillaume/Chains"
+    log_file = os.path.join(parent_folder, "log.txt")
 
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/"
+    # parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/"
     folder_list: List[Tuple[str]] = [(os.path.join(parent_folder, f),) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
 
     # pool = mp.Pool(mp.cpu_count() - 1)
     # pool.starmap_async(main, folder_list).get()
     # pool.close()
     for f in folder_list:
-        main(f[0])
+        log = main(f[0])
+        with open(log_file, 'a') as file:
+            file.write(log)
     # main("/Users/sintes/Desktop/NASGuillaume/Chains/2023-10-06_13h10m14s")
