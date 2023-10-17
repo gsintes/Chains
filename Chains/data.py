@@ -142,7 +142,10 @@ class Result():
         try:
             os.makedirs(path)
         except FileExistsError:
-            os.remove(os.path.join(path, "tracking.db"))
+            try:
+                os.remove(os.path.join(path, "tracking.db"))
+            except FileNotFoundError:
+                pass
          
         self.cnx = sqlite3.connect(path + "/tracking.db")
         cursor = self.cnx.cursor()
