@@ -143,7 +143,6 @@ class Result():
             os.makedirs(path)
         except FileExistsError:
             os.remove(os.path.join(path, "tracking.db"))
-         
         self.cnx = sqlite3.connect(path + "/tracking.db")
         cursor = self.cnx.cursor()
         cursor.execute("CREATE TABLE tracking ( xHead REAL, yHead REAL, tHead REAL, xTail REAL,"
@@ -151,6 +150,7 @@ class Result():
                        "curvature REAL, areaBody REAL, perimeterBody REAL,"
                        "headMajorAxisLength REAL, headMinorAxisLength REAL,"
                        "headExcentricity REAL, tailMajorAxisLength REAL, tailMinorAxisLength REAL,"
+
                        "tailExcentricity REAL, bodyMajorAxisLength REAL, bodyMinorAxisLength REAL,"
                        "bodyExcentricity REAL, imageNumber INTEGER, id INTEGER)")
         self.cnx.commit()

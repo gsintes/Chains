@@ -17,6 +17,7 @@ import preprocessing
 
 def main(folder_path: str) -> str:
     exp_name = folder_path.split("/")[-1]
+    print(exp_name)
 
     image_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".tif")]
     image_list.sort()
@@ -29,14 +30,12 @@ def main(folder_path: str) -> str:
         max_int = int(preprocessing.max_intensity_video(image_list))
         with open(param_file, 'w') as f:
             f.write(json.dumps({"maxint": max_int}))
-    
-    
+
     tracked_path = os.path.join(folder_path, "Figure","Tracked")
     try:
-        os.mkdir(tracked_path)
+        os.makedirs(tracked_path)
     except FileExistsError:
         pass
-    
 
     # Load configuration
     config = dat.Configuration()
