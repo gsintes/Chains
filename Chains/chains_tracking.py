@@ -78,9 +78,12 @@ def main(folder_path: str) -> str:
     return f"{exp_name} done at {datetime.now()}\n"
 
 if __name__=="__main__":
-    parent_folder = "/run/user/1000/gvfs/afp-volume:host=Suspension_Lab.local,volume=Guillaume/Chains"
+    parent_folder = "/media/guillaume/Chains/Chains"
     log_file = os.path.join(parent_folder, "log.txt")
-
+    try:
+        os.remove(log_file)
+    except FileNotFoundError:
+        pass
     # parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/"
     folder_list: List[Tuple[str]] = [(os.path.join(parent_folder, f),) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
 

@@ -133,7 +133,8 @@ class Result():
                             np.sqrt(1 - (data["1"]["minor_axis"] / data["1"]["major_axis"]) ** 2),
                             data["2"]["major_axis"], data["2"]["minor_axis"],
                             np.sqrt(1 - (data["2"]["minor_axis"] / data["2"]["major_axis"]) ** 2),
-                            data["3"]["time"], data["3"]["id"]))        self.cnx.commit()
+                            data["3"]["time"], data["3"]["id"]))
+        self.cnx.commit()
         cursor.close()
 
     def __init__(self, path: str) -> None:
