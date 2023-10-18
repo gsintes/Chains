@@ -108,9 +108,10 @@ def plot_grouped_data(grouped: pd.DataFrame) -> None:
     plt.show(block=True)
 
 if __name__ == "__main__":
-    folder_path = "/Users/sintes/Desktop/ImageSeq"
-    analysis = Analysis(folder_path)
-    grouped_data = analysis.process()
-    # print(grouped_data)
-    plot_grouped_data(grouped_data)
+    parent_folder = "/media/guillaume/Chains/Chains"
+    folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
+    for folder in folder_list:
+        analysis = Analysis(folder)
+        grouped_data = analysis.process()
+        plot_grouped_data(grouped_data)
     
