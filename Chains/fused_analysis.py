@@ -25,7 +25,6 @@ def load_all_data(parent_folder: str) -> pd.DataFrame:
         for f in sub_folders:
             sub_data = pd.read_csv(os.path.join(f, "Tracking_Result/vel_data.csv"))
             sub_data["Concentration_LC"] = concentration
-            sub_data["Normalized_vel"] = sub_data["velocity"] / sub_data["Single_vel"] 
             data = pd.concat([data, sub_data], ignore_index=True)
     return data
 

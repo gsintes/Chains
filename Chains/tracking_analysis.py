@@ -103,6 +103,7 @@ class Analysis():
                              "velocity": mean_vel})
         single_vel = self.velocity_data.loc[self.velocity_data["bact_number"] == 1, "velocity"].mean()
         self.velocity_data["Single_vel"] = single_vel
+        self.velocity_data["Normalized_vel"] = self.velocity_data["velocity"] / single_vel
         self.clean()
         return self.velocity_data
 
@@ -110,8 +111,14 @@ def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
     """Plot the grouped data."""
     velocity_data.plot("bact_number", "velocity", "scatter")
     plt.xlabel("Number of bacteria")
-    plt.ylabel("Velocity")
-    plt.savefig(os.path.join(folder, "Figure/scatter.png"))
+    plt.ylabel("V")
+    plt.savefig(os.path.join(folder, "Figure/scatter_raw.png"))
+    plt.close()
+
+    velocity_data.plot("bact_number", "velocity", "scatter")
+    plt.xlabel("Number of bacteria")
+    plt.ylabel("$V/V_0$")
+    plt.savefig(os.path.join(folder, "Figure/scatter_norm.png"))
     plt.close()
 
     bact_nb = velocity_data["bact_number"].unique()
@@ -129,12 +136,20 @@ def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
     plt.errorbar(x=bact_nb, y=vel / vel[0], yerr=se_vel / vel[0], linestyle="", marker="s")
     plt.xlabel("Number of bacteria")
     plt.ylabel("Velocity")
-    plt.savefig(os.path.join(folder, "Figure/error.png"))
+    plt.savefig(os.path.join(folder, "Figure/error_norm.png"))
+    plt.close()
+
+    plt.figure()
+    plt.errorbar(x=bact_nb, y=vel, yerr=se_vel, linestyle="", marker="s")
+    plt.xlabel("Number of bacteria")
+    plt.ylabel("Velocity")
+    plt.savefig(os.path.join(folder, "Figure/error_raw.png"))
     plt.close()
 
 
+
 if __name__ == "__main__":
-    parent_folder = "/Volumes/Chains/Chains/Chains 12%"
+    parent_folder = "/Volumes/Chains/Chains/Chains 13.68%"
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
     for folder in folder_list:
