@@ -73,6 +73,22 @@ class Analysis():
             nb_bact = np.rint(mean_length / self.bactLength)
             self.data.loc[self.data["id"] == id, "bactNumber"] = nb_bact
 
+    def clean(self) -> None:
+        """Clean the data by removing to short tracks."""
+        ids = self.data["id"].unique()
+        for id in ids:
+            length = self.bactLength * self.velocity_data.loc[self.velocity_data["id"] == id, "velocity"].mean() 
+            vel = self.scale * self.velocity_data.loc[self.velocity_data["id"] == id, "velocity"].mean() / self.frameRate #pix/frame
+            if vel < 0.2:
+                self.velocity_data = self.velocity_data.drop(self.velocity_data[self.velocity_data["id"] == id].index)
+                print(id, vel)
+            else:
+                thresh = length / vel
+                len_track = len(self.data.loc[self.data["id"] == id])
+                if len_track < thresh:
+                    print(id, len_track, thresh)
+                    self.velocity_data = self.velocity_data.drop(self.velocity_data[self.velocity_data["id"] == id].index)
+
     def process(self) -> pd.DataFrame:
         """Performs the analysis."""
         self.calculate_velocity()
@@ -84,22 +100,26 @@ class Analysis():
             data = self.data.loc[self.data["id"] == id]
             bact_number.append(int(min(data["bactNumber"])))
             mean_vel.append(data["Velocity"].mean())
-        return pd.DataFrame({"id": ids,
+        self.velocity_data = pd.DataFrame({"id": ids,
                              "bact_number": bact_number,
                              "velocity": mean_vel})
+        single_vel = self.velocity_data.loc[self.velocity_data["bact_number"] == 1, "velocity"].mean()
+        self.velocity_data["Single_vel"] = single_vel
+        self.clean()
+        return self.velocity_data
 
-def plot_grouped_data(grouped: pd.DataFrame) -> None:
+def plot_grouped_data(velocity_data: pd.DataFrame) -> None:
     """Plot the grouped data."""
-    grouped.plot("bact_number", "velocity", "scatter")
+    velocity_data.plot("bact_number", "velocity", "scatter")
     plt.xlabel("Number of bacteria")
     plt.ylabel("Velocity")
 
-    bact_nb = grouped_data["bact_number"].unique()
+    bact_nb = velocity_data["bact_number"].unique()
     vel: List[float] = []
     std_vel: List[float] = []
     for nb in bact_nb:
-        vel.append(grouped.loc[grouped["bact_number"] == nb, "velocity"].mean())
-        std_vel.append(grouped.loc[grouped["bact_number"] == nb, "velocity"].std())
+        vel.append(velocity_data.loc[velocity_data["bact_number"] == nb, "velocity"].mean())
+        std_vel.append(velocity_data.loc[velocity_data["bact_number"] == nb, "velocity"].std())
 
     plt.figure()
     plt.errorbar(x=bact_nb, y=vel / vel[0], yerr=std_vel / vel[0], linestyle="", marker="s")
@@ -108,10 +128,12 @@ def plot_grouped_data(grouped: pd.DataFrame) -> None:
     plt.show(block=True)
 
 if __name__ == "__main__":
-    parent_folder = "/media/guillaume/Chains/Chains"
+    parent_folder = "/Volumes/Chains/Chains"
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
+    folder_list.sort()
     for folder in folder_list:
+        print(folder)
         analysis = Analysis(folder)
-        grouped_data = analysis.process()
-        plot_grouped_data(grouped_data)
+        velocity_data = analysis.process()
+        plot_grouped_data(velocity_data)
     
