@@ -49,7 +49,6 @@ if __name__ == "__main__":
     plt.figure()
     sns.pointplot(data=data, x="bact_number", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="se")
     plt.legend(loc=3)
-    plt.savefig(os.path.join(parent_folder,"Figures/errorbar_raw.png"))
-
+    plt.savefig(os.path.join(parent_folder,"Figures/errorbar_norm.png"))
 
     plt.show(block=True)

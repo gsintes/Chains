@@ -48,19 +48,20 @@ class Analysis():
     @staticmethod   
     def detect_plateau_value(sequence: pd.Series):
         """Detect a plateau in a serie."""
-        try:
-            window_size = 10
-            list_seq = list(sequence)
-            std_moving = sequence.rolling(window_size).std()
-            mean = std_moving.mean()
-            std = std_moving.std()
 
-            values: List[float] = []
-            for i, val_std in enumerate(std_moving):
-                if val_std < mean - std:
-                    values.append(list_seq[i])
+        window_size = 10
+        list_seq = list(sequence)
+        std_moving = sequence.rolling(window_size).std()
+        mean = std_moving.mean()
+        std = std_moving.std()
+
+        values: List[float] = []
+        for i, val_std in enumerate(std_moving):
+            if val_std < mean - std:
+                values.append(list_seq[i])
+        if len(values) != 0:    
             return np.mean(values)
-        except FloatingPointError:
+        else:
             return sequence.mean()
 
     def calculate_chain_length(self) -> pd.DataFrame: 
