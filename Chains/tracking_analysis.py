@@ -117,16 +117,16 @@ def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
     bact_nb = velocity_data["bact_number"].unique()
     bact_nb.sort()
     vel_l: List[float] = []
-    std_vel_l: List[float] = []
+    se_vel_l: List[float] = []
     for nb in bact_nb:
         vel_l.append(velocity_data.loc[velocity_data["bact_number"] == nb, "velocity"].mean())
-        std_vel_l.append(velocity_data.loc[velocity_data["bact_number"] == nb, "velocity"].std())
+        se_vel_l.append(velocity_data.loc[velocity_data["bact_number"] == nb, "velocity"].sem()) #standard error
     
     vel = np.array(vel_l)
-    std_vel = np.array(std_vel_l)
+    se_vel = np.array(se_vel_l)
 
     plt.figure()
-    plt.errorbar(x=bact_nb, y=vel / vel[0], yerr=std_vel / vel[0], linestyle="", marker="s")
+    plt.errorbar(x=bact_nb, y=vel / vel[0], yerr=se_vel / vel[0], linestyle="", marker="s")
     plt.xlabel("Number of bacteria")
     plt.ylabel("Velocity")
     plt.savefig(os.path.join(folder, "Figure/error.png"))
