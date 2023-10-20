@@ -91,7 +91,7 @@ def elongate_objects(binarized_image: np.ndarray, nb_iter: int = 2, kernel_size:
         dilated_image = morphology.binary_dilation(dilated_image, kernel)
     return dilated_image
 
-def contour_on_the_side(contour: List[List[List[int]]], im_shape: Tuple[int, int]) -> bool:
+def contour_on_the_side(contour: List[List[List[int]]], im_shape: Tuple[int, ...]) -> bool:
     """Detect if a contour is touching the side of the image."""
     for i in contour:
         point = i[0]
