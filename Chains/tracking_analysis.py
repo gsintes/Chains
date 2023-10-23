@@ -102,10 +102,10 @@ class Analysis():
         self.velocity_data = pd.DataFrame({"id": ids,
                              "bact_number": bact_number,
                              "velocity": mean_vel})
+        self.clean()
         single_vel = self.velocity_data.loc[self.velocity_data["bact_number"] == 1, "velocity"].mean()
         self.velocity_data["Single_vel"] = single_vel
         self.velocity_data["Normalized_vel"] = self.velocity_data["velocity"] / single_vel
-        self.clean()
         return self.velocity_data
 
 def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
@@ -150,7 +150,7 @@ def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
 
 
 if __name__ == "__main__":
-    parent_folder = "/Volumes/Chains/Chains/Chains 13.68%"
+    parent_folder = "/Volumes/Chains/Chains/Chains 12%"
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
     for folder in folder_list:

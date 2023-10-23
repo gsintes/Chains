@@ -31,7 +31,7 @@ def load_all_data(parent_folder: str) -> pd.DataFrame:
 if __name__ == "__main__":
     parent_folder = "/Volumes/Chains/Chains"
     data = load_all_data(parent_folder)
-  
+
 
     plt.figure()
     sns.scatterplot(data=data, x="bact_number", y="Normalized_vel", hue="Concentration_LC")

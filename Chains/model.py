@@ -35,10 +35,10 @@ plt.figure()
 
 for alpha in alpha_val:
     vel = []
-    for n in range(1, 10):
+    for n in range(1, 13):
         vel.append(calculate_velocity(n, alpha) / calculate_velocity(1, 1))
     res[alpha] = vel
-    plt.plot(range(1, 10), vel, "o", label=str(alpha))
+    plt.plot(range(1, 13), vel, "o", label=str(alpha))
 plt.ylabel("V / Vsingle")
 plt.xlabel("Chain length")
 plt.legend(title=r"$\alpha$")
