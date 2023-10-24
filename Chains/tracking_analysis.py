@@ -15,7 +15,7 @@ class Analysis():
     def __init__(self, path) -> None:
         self.bactLength = 10
         self.frameRate = 30
-        self.scale = 3.2
+        self.scale = 6.24
 
         self.path = path
         self.data = self.load_data()
@@ -43,7 +43,7 @@ class Analysis():
                 
                 velocity = pos_diff / time_diff
                 self.data.loc[velocity.index, ax[0] + "Vel"] = velocity
-        self.data["Velocity"] = np.sqrt(self.data["xVel"] ** 2+ self.data["yVel"] ** 2)
+        self.data["Velocity"] = np.sqrt(self.data["xVel"] ** 2 + self.data["yVel"] ** 2)
 
     @staticmethod   
     def detect_plateau_value(sequence: pd.Series):
@@ -150,7 +150,7 @@ def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
 
 
 if __name__ == "__main__":
-    parent_folder = "/Volumes/Chains/Chains/Chains 12%"
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 13.68%"
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
     for folder in folder_list:

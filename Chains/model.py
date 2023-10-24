@@ -28,18 +28,19 @@ def calculate_velocity(n: int, alpha: float) -> float:
 
     return Bf / (Af + A0)
 
-res = {}
-alpha_val = [0, 1]
+if __name__=="__main__":
+    res = {}
+    alpha_val = [0, 1]
 
-plt.figure()
+    plt.figure()
 
-for alpha in alpha_val:
-    vel = []
-    for n in range(1, 13):
-        vel.append(calculate_velocity(n, alpha) / calculate_velocity(1, 1))
-    res[alpha] = vel
-    plt.plot(range(1, 13), vel, "o", label=str(alpha))
-plt.ylabel("V / Vsingle")
-plt.xlabel("Chain length")
-plt.legend(title=r"$\alpha$")
-plt.show(block=True)
+    for alpha in alpha_val:
+        vel = []
+        for n in range(1, 13):
+            vel.append(calculate_velocity(n, alpha) / calculate_velocity(1, 1))
+        res[alpha] = vel
+        plt.plot(range(1, 13), vel, "o", label=str(alpha))
+    plt.ylabel("V / Vsingle")
+    plt.xlabel("Chain length")
+    plt.legend(title=r"$\alpha$")
+    plt.show(block=True)
