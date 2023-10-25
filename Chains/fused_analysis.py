@@ -29,10 +29,8 @@ def load_all_data(parent_folder: str) -> pd.DataFrame:
             data = pd.concat([data, sub_data], ignore_index=True)
     return data
 
-if __name__ == "__main__":
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains"
-    data = load_all_data(parent_folder)
-
+def plots_velocity_number(data: pd.DataFrame) -> None:
+    """Generate the plots velocity vs chain length."""
     vel_model = []
     for n in range(1, 11):
         vel_model.append(calculate_velocity(n, 1) / calculate_velocity(1, 1))
@@ -66,5 +64,12 @@ if __name__ == "__main__":
     plt.plot(range(1, 11), vel_model, "s", label="Model")
     plt.legend(loc=3)
     plt.savefig(os.path.join(parent_folder,"Figures/errorbar_normsd.png"))
+
+
+if __name__ == "__main__":
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains"
+    data = load_all_data(parent_folder)
+
+    plots_velocity_number(data)
 
     plt.show(block=True)
