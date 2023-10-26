@@ -39,7 +39,7 @@ def velocity_histograms(data: pd.DataFrame, fig_folder: str) -> None:
         pass
 
     plt.figure()
-    sns.histplot(data, x="velocity", hue="Concentration_LC", stat="density")
+    sns.histplot(data, x="velocity", hue="Concentration_LC", stat="density", common_norm=False)
     plt.title("Velocities")
     plt.savefig(os.path.join(hist_folder, "hist_general.png"))
 
@@ -61,13 +61,25 @@ def velocity_histograms(data: pd.DataFrame, fig_folder: str) -> None:
         for nb in bact_numbers:
             nb_data = c_data.loc[c_data["bact_number"]==nb]
             data_length = len(nb_data)
-            print(c, nb, data_length)
             plt.figure()
             sns.histplot(nb_data, x="velocity", stat="density")
             plt.title(f"Chain length : {nb}")
             plt.savefig(os.path.join(c_folder, f"hist_{nb}.png"))
             plt.close()
 
+def size_distribution(data: pd.DataFrame, fig_folder: str) -> None:
+    """Plot the chain length distribution."""
+    concentrations = data["Concentration_LC"].unique()
+    
+    plt.figure()
+    sns.histplot(data, x="bact_number", hue="Concentration_LC", multiple="dodge", discrete=True, shrink=0.8)
+    plt.xlabel("Chain length")
+    plt.savefig(os.path.join(fig_folder, "chain_length_dist_nb.png")) 
+    plt.figure()
+    sns.histplot(data, x="bact_number", hue="Concentration_LC",
+                 multiple="dodge", discrete=True, stat="density", common_norm=False, shrink=0.8)
+    plt.xlabel("Chain length")
+    plt.savefig(os.path.join(fig_folder, "chain_length_dist_norm.png")) 
 
 def plots_velocity_number(data: pd.DataFrame, fig_folder: str) -> None:
     """Generate the plots velocity vs chain length."""
@@ -120,3 +132,4 @@ if __name__ == "__main__":
 
     plots_velocity_number(data, fig_folder)
     velocity_histograms(data, fig_folder)
+    size_distribution(data, fig_folder)
