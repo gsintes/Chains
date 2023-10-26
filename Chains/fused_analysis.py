@@ -45,6 +45,10 @@ def velocity_histograms(data: pd.DataFrame, fig_folder: str) -> None:
     plt.title("Velocities")
     plt.savefig(os.path.join(hist_folder, "hist_general.png"))
 
+    plt.figure()
+    sns.boxplot(data, y="velocity", hue="Concentration_LC")
+    plt.savefig(os.path.join(hist_folder, "box_plot.png"))
+
     for c in concentrations:
         try:
             c_folder = os.path.join(hist_folder, str(c))
