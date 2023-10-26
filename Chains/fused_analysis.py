@@ -29,47 +29,94 @@ def load_all_data(parent_folder: str) -> pd.DataFrame:
             data = pd.concat([data, sub_data], ignore_index=True)
     return data
 
-def plots_velocity_number(data: pd.DataFrame) -> None:
+def velocity_histograms(data: pd.DataFrame, fig_folder: str) -> None:
+    """Plot the velocity histograms grouped by chain length."""
+    concentrations = data["Concentration_LC"].unique()
+    try:
+        hist_folder = os.path.join(fig_folder, "Velocity_histograms")
+        os.makedirs(hist_folder)
+    except FileExistsError:
+        pass
+
+    plt.figure()
+    sns.histplot(data, x="velocity", hue="Concentration_LC", stat="density")
+    plt.title("Velocities")
+    plt.savefig(os.path.join(hist_folder, "hist_general.png"))
+
+    for c in concentrations:
+        try:
+            c_folder = os.path.join(hist_folder, str(c))
+            os.makedirs(c_folder)
+        except FileExistsError:
+            pass
+        c_data: pd.DataFrame = data.loc[data["Concentration_LC"] == c]
+        bact_numbers = c_data["bact_number"].unique()
+        bact_numbers.sort()
+        plt.figure()
+        sns.histplot(c_data, x="velocity", stat="density")
+        plt.title("Velocities")
+        plt.savefig(os.path.join(c_folder, "hist_general.png"))
+        plt.close()
+
+        for nb in bact_numbers:
+            nb_data = c_data.loc[c_data["bact_number"]==nb]
+            data_length = len(nb_data)
+            print(c, nb, data_length)
+            plt.figure()
+            sns.histplot(nb_data, x="velocity", stat="density")
+            plt.title(f"Chain length : {nb}")
+            plt.savefig(os.path.join(c_folder, f"hist_{nb}.png"))
+            plt.close()
+
+
+def plots_velocity_number(data: pd.DataFrame, fig_folder: str) -> None:
     """Generate the plots velocity vs chain length."""
     vel_model = []
     for n in range(1, 11):
         vel_model.append(calculate_velocity(n, 1) / calculate_velocity(1, 1))
-    print(vel_model)
+
     plt.figure()
     sns.scatterplot(data=data, x="bact_number", y="Normalized_vel", hue="Concentration_LC")
-    plt.savefig(os.path.join(parent_folder,"Figures/scatter_norm.png"))
+    plt.savefig(os.path.join(fig_folder, "scatter_norm.png"))
+    plt.close()
 
     plt.figure()
     sns.scatterplot(data=data, x="bact_number", y="velocity", hue="Concentration_LC")
-    plt.savefig(os.path.join(parent_folder,"Figures/scatter_raw.png"))
+    plt.savefig(os.path.join(fig_folder,"scatter_raw.png"))
+    plt.close()
 
     plt.figure()
     sns.pointplot(data=data, x="bact_number", y="velocity", hue="Concentration_LC", linestyles="", errorbar="se")
     plt.legend(loc=3)
-    plt.savefig(os.path.join(parent_folder,"Figures/errorbar_raw.png"))
+    plt.savefig(os.path.join(fig_folder,"errorbar_raw.png"))
+    plt.close()
 
     plt.figure()
     sns.pointplot(data=data, x="bact_number", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="se")
     plt.plot(range(1, 11), vel_model, "s", label="Model")
     plt.legend(loc=3)
-    plt.savefig(os.path.join(parent_folder,"Figures/errorbar_norm.png"))
+    plt.savefig(os.path.join(fig_folder, "errorbar_norm.png"))
+    plt.close()
 
     plt.figure()
     sns.pointplot(data=data, x="bact_number", y="velocity", hue="Concentration_LC", linestyles="", errorbar="sd")
     plt.legend(loc=3)
-    plt.savefig(os.path.join(parent_folder,"Figures/errorbar_rawsd.png"))
+    plt.savefig(os.path.join(fig_folder,"errorbar_rawsd.png"))
+    plt.close()
 
     plt.figure()
     sns.pointplot(data=data, x="bact_number", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="sd")
     plt.plot(range(1, 11), vel_model, "s", label="Model")
     plt.legend(loc=3)
-    plt.savefig(os.path.join(parent_folder,"Figures/errorbar_normsd.png"))
-
+    plt.savefig(os.path.join(fig_folder, "errorbar_normsd.png"))
+    plt.close()
 
 if __name__ == "__main__":
     parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains"
+    fig_folder = os.path.join(parent_folder, "Figures")
     data = load_all_data(parent_folder)
 
-    plots_velocity_number(data)
+    data.to_csv(os.path.join(parent_folder, "chain_data.csv"))
 
-    plt.show(block=True)
+    plots_velocity_number(data, fig_folder)
+    velocity_histograms(data, fig_folder)
