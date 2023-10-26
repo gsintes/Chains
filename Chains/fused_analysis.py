@@ -52,17 +52,22 @@ def velocity_histograms(data: pd.DataFrame, fig_folder: str) -> None:
         except FileExistsError:
             pass
         c_data: pd.DataFrame = data.loc[data["Concentration_LC"] == c]
-        bact_numbers = c_data["bact_number"].unique()
-        bact_numbers.sort()
+        chain_lengths = c_data["chain_length"].unique()
+        chain_lengths.sort()
         plt.figure()
         sns.histplot(c_data, x="velocity", stat="density")
         plt.title("Velocities")
         plt.savefig(os.path.join(c_folder, "hist_general.png"))
         plt.close()
 
-        for nb in bact_numbers:
-            nb_data = c_data.loc[c_data["bact_number"]==nb]
-            data_length = len(nb_data)
+        plt.figure()
+        g = sns.FacetGrid(c_data, col="chain_length", col_wrap=3, height=2)
+        g.map(sns.histplot, "velocity", stat="density")
+        plt.savefig(os.path.join(c_folder, "hist_grouped.png"))
+        plt.close()
+
+        for nb in chain_lengths:
+            nb_data = c_data.loc[c_data["chain_length"]==nb]
             plt.figure()
             sns.histplot(nb_data, x="velocity", stat="density")
             plt.title(f"Chain length : {nb}")
@@ -74,11 +79,11 @@ def size_distribution(data: pd.DataFrame, fig_folder: str) -> None:
     concentrations = data["Concentration_LC"].unique()
     
     plt.figure()
-    sns.histplot(data, x="bact_number", hue="Concentration_LC", multiple="dodge", discrete=True, shrink=0.8)
+    sns.histplot(data, x="chain_length", hue="Concentration_LC", multiple="dodge", discrete=True, shrink=0.8)
     plt.xlabel("Chain length")
     plt.savefig(os.path.join(fig_folder, "chain_length_dist_nb.png")) 
     plt.figure()
-    sns.histplot(data, x="bact_number", hue="Concentration_LC",
+    sns.histplot(data, x="chain_length", hue="Concentration_LC",
                  multiple="dodge", discrete=True, stat="density", common_norm=False, shrink=0.8)
     plt.xlabel("Chain length")
     plt.savefig(os.path.join(fig_folder, "chain_length_dist_norm.png")) 
@@ -90,36 +95,36 @@ def plots_velocity_number(data: pd.DataFrame, fig_folder: str) -> None:
         vel_model.append(calculate_velocity(n, 1) / calculate_velocity(1, 1))
 
     plt.figure()
-    sns.scatterplot(data=data, x="bact_number", y="Normalized_vel", hue="Concentration_LC")
+    sns.scatterplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC")
     plt.savefig(os.path.join(fig_folder, "scatter_norm.png"))
     plt.close()
 
     plt.figure()
-    sns.scatterplot(data=data, x="bact_number", y="velocity", hue="Concentration_LC")
+    sns.scatterplot(data=data, x="chain_length", y="velocity", hue="Concentration_LC")
     plt.savefig(os.path.join(fig_folder,"scatter_raw.png"))
     plt.close()
 
     plt.figure()
-    sns.pointplot(data=data, x="bact_number", y="velocity", hue="Concentration_LC", linestyles="", errorbar="se")
+    sns.pointplot(data=data, x="chain_length", y="velocity", hue="Concentration_LC", linestyles="", errorbar="se")
     plt.legend(loc=3)
     plt.savefig(os.path.join(fig_folder,"errorbar_raw.png"))
     plt.close()
 
     plt.figure()
-    sns.pointplot(data=data, x="bact_number", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="se")
+    sns.pointplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="se")
     plt.plot(range(1, 11), vel_model, "s", label="Model")
     plt.legend(loc=3)
     plt.savefig(os.path.join(fig_folder, "errorbar_norm.png"))
     plt.close()
 
     plt.figure()
-    sns.pointplot(data=data, x="bact_number", y="velocity", hue="Concentration_LC", linestyles="", errorbar="sd")
+    sns.pointplot(data=data, x="chain_length", y="velocity", hue="Concentration_LC", linestyles="", errorbar="sd")
     plt.legend(loc=3)
     plt.savefig(os.path.join(fig_folder,"errorbar_rawsd.png"))
     plt.close()
 
     plt.figure()
-    sns.pointplot(data=data, x="bact_number", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="sd")
+    sns.pointplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="sd")
     plt.plot(range(1, 11), vel_model, "s", label="Model")
     plt.legend(loc=3)
     plt.savefig(os.path.join(fig_folder, "errorbar_normsd.png"))
