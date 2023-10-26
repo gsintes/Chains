@@ -62,7 +62,7 @@ def velocity_histograms(data: pd.DataFrame, fig_folder: str) -> None:
 
         plt.figure()
         g = sns.FacetGrid(c_data, col="chain_length", col_wrap=3, height=2)
-        g.map(sns.histplot, "velocity", stat="density")
+        g.map(sns.histplot, "velocity", stat="density", common_norm=False)
         plt.savefig(os.path.join(c_folder, "hist_grouped.png"))
         plt.close()
 
@@ -75,20 +75,19 @@ def velocity_histograms(data: pd.DataFrame, fig_folder: str) -> None:
             plt.close()
 
 def size_distribution(data: pd.DataFrame, fig_folder: str) -> None:
-    """Plot the chain length distribution."""
-    concentrations = data["Concentration_LC"].unique()
-    
+    """Plot the chain length distribution."""    
     plt.figure()
     sns.histplot(data, x="chain_length", hue="Concentration_LC", multiple="dodge", discrete=True, shrink=0.8)
     plt.xlabel("Chain length")
     plt.savefig(os.path.join(fig_folder, "chain_length_dist_nb.png")) 
+
     plt.figure()
     sns.histplot(data, x="chain_length", hue="Concentration_LC",
                  multiple="dodge", discrete=True, stat="density", common_norm=False, shrink=0.8)
     plt.xlabel("Chain length")
     plt.savefig(os.path.join(fig_folder, "chain_length_dist_norm.png")) 
 
-def plots_velocity_number(data: pd.DataFrame, fig_folder: str) -> None:
+def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     """Generate the plots velocity vs chain length."""
     vel_model = []
     for n in range(1, 11):
@@ -137,6 +136,6 @@ if __name__ == "__main__":
 
     data.to_csv(os.path.join(parent_folder, "chain_data.csv"))
 
-    plots_velocity_number(data, fig_folder)
+    plots_velocity_vs_length(data, fig_folder)
     velocity_histograms(data, fig_folder)
     size_distribution(data, fig_folder)
