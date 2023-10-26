@@ -24,8 +24,10 @@ def load_all_data(parent_folder: str) -> pd.DataFrame:
         concentration = get_concentration(c_folder)
         sub_folders = [os.path.join(c_folder, f) for f in os.listdir(c_folder) if os.path.isdir(os.path.join(c_folder,f))]
         for f in sub_folders:
+            exp = f.split("/")[-1]
             sub_data = pd.read_csv(os.path.join(f, "Tracking_Result/vel_data.csv"))
             sub_data["Concentration_LC"] = concentration
+            sub_data["Exp"] = exp
             data = pd.concat([data, sub_data], ignore_index=True)
     return data
 
