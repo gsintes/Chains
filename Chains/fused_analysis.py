@@ -2,10 +2,13 @@
 
 import os
 import re
+from typing import List, Tuple
+from random import sample
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+
 
 from model import calculate_velocity
 
@@ -133,6 +136,22 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     plt.savefig(os.path.join(fig_folder, "errorbar_normsd.png"))
     plt.close()
 
+def sampling(data: pd.DataFrame, nb: int = 10) -> List[Tuple[str, int, int]]:
+    """Give a sampling of the data to check detection."""
+    lengths = data["chain_length"].unique()
+    lengths.sort()
+    res: List[Tuple[str, int, int]] = []
+    for l in lengths:
+        sub_data: pd.DataFrame = data.loc[data["chain_length"]==l]
+        if len(sub_data) > nb:
+            indexes = list(sub_data.index)
+            subset = sample(indexes, nb)
+            sub_data = sub_data.loc[subset]
+        
+        for chain in sub_data.iterrows():
+            res.append((chain[1]["Exp"], chain[1]["id"], l))
+    return res
+
 if __name__ == "__main__":
     parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains"
     fig_folder = os.path.join(parent_folder, "Figures")
@@ -143,3 +162,4 @@ if __name__ == "__main__":
     plots_velocity_vs_length(data, fig_folder)
     velocity_histograms(data, fig_folder)
     size_distribution(data, fig_folder)
+   
