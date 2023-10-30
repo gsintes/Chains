@@ -43,7 +43,7 @@ def main(folder_path: str) -> str:
 
     # Set up detector
 
-    visualisation_processed = True
+    visualisation_processed = False
     if visualisation_processed :
         processed_path = os.path.join(folder_path, "Figure", "Processed")
         shutil.rmtree(processed_path, ignore_errors=True)
@@ -84,9 +84,6 @@ if __name__=="__main__":
         pass
     folder_list: List[Tuple[str]] = [(os.path.join(parent_folder, f),) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
-
-    folder_list = folder_list[0:1]
-
 
     for f in folder_list:
         log = main(f[0])
