@@ -47,8 +47,13 @@ class ChainDetector(BaseDetector):
         if int(self.params["lightBack"]) == 0:
             image = self.background - image
         else:
+            image0 = np.copy(image)
             image = image - self.background
-
+            image[image0 < self.background] = 0
+        
+        image = preprocessing.remove_slowy_varying(image)
+        if self.visualisation:
+            cv2.imwrite(os.path.join(self.save_folder, f"processed{self.count:06d}.png"), image)
         image = preprocessing.binarize(image)
         image = preprocessing.remove_small_objects(image)
         image = preprocessing.elongate_objects(image, self.nb_iter, self.kernel_size)
@@ -61,8 +66,7 @@ class ChainDetector(BaseDetector):
         image = image.astype(np.uint8)
 
         im_shape = image.shape
-        if self.visualisation:
-            cv2.imwrite(os.path.join(self.save_folder, f"processed{self.count:06d}.png"), image)
+        
 
         contours, _ = cv2.findContours(
             image, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)

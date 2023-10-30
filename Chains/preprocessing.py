@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 from skimage.filters.thresholding import threshold_otsu
 from skimage import morphology
+from skimage.filters import gaussian
 
 def timeit(func):
     # @wraps(func)
@@ -54,6 +55,12 @@ def get_background(image_sequence: List[str], max_int: int) -> np.ndarray:
         current_frame = convert_16to8bits(im_name, max_int)
         background = np.minimum(background, current_frame)
     return background
+
+def remove_slowy_varying(image: np.ndarray) -> np.ndarray:
+    """Remove slowy image."""
+    image = image.astype("float64")
+    blur = gaussian(image, sigma=10)
+    return image - blur
 
 def binarize(im: np.ndarray) -> np.ndarray:
     """
