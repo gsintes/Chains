@@ -103,10 +103,3 @@ def contour_on_the_side(contour: List[List[List[int]]], im_shape: Tuple[int, ...
         if y == 0 or y == im_shape[1] -1:
             return True
     return False
-
-
-# def get_elongation(kernel_size: int = 3, iterations: int = 4) -> float:
-#     """
-#     Calculate the actual chain length from the elongated chain length and elongation at the ends.
-#     """
-#     return 2 * iterations * (kernel_size - 1) 
