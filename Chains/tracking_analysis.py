@@ -93,42 +93,42 @@ class Analysis():
         self.calculate_velocity()
         self.calculate_chain_length()
         ids = self.data["id"].unique()
-        bact_number: List[int] = []
+        chain_length: List[int] = []
         mean_vel: List[float] = []
         for id in ids:
             data = self.data.loc[self.data["id"] == id]
-            bact_number.append(int(min(data["bactNumber"])))
+            chain_length.append(int(min(data["bactNumber"])))
             mean_vel.append(data["Velocity"].mean())
         self.velocity_data = pd.DataFrame({"id": ids,
-                             "bact_number": bact_number,
+                             "chain_length": chain_length,
                              "velocity": mean_vel})
         self.clean()
-        single_vel = self.velocity_data.loc[self.velocity_data["bact_number"] == 1, "velocity"].mean()
+        single_vel = self.velocity_data.loc[self.velocity_data["chain_length"] == 1, "velocity"].mean()
         self.velocity_data["Single_vel"] = single_vel
         self.velocity_data["Normalized_vel"] = self.velocity_data["velocity"] / single_vel
         return self.velocity_data
 
 def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
     """Plot the grouped data."""
-    velocity_data.plot("bact_number", "velocity", "scatter")
+    velocity_data.plot("chain_length", "velocity", "scatter")
     plt.xlabel("Number of bacteria")
     plt.ylabel("V")
     plt.savefig(os.path.join(folder, "Figure/scatter_raw.png"))
     plt.close()
 
-    velocity_data.plot("bact_number", "velocity", "scatter")
+    velocity_data.plot("chain_length", "velocity", "scatter")
     plt.xlabel("Number of bacteria")
     plt.ylabel("$V/V_0$")
     plt.savefig(os.path.join(folder, "Figure/scatter_norm.png"))
     plt.close()
 
-    bact_nb = velocity_data["bact_number"].unique()
+    bact_nb = velocity_data["chain_length"].unique()
     bact_nb.sort()
     vel_l: List[float] = []
     se_vel_l: List[float] = []
     for nb in bact_nb:
-        vel_l.append(velocity_data.loc[velocity_data["bact_number"] == nb, "velocity"].mean())
-        se_vel_l.append(velocity_data.loc[velocity_data["bact_number"] == nb, "velocity"].sem()) #standard error
+        vel_l.append(velocity_data.loc[velocity_data["chain_length"] == nb, "velocity"].mean())
+        se_vel_l.append(velocity_data.loc[velocity_data["chain_length"] == nb, "velocity"].sem()) #standard error
     
     vel = np.array(vel_l)
     se_vel = np.array(se_vel_l)
@@ -150,7 +150,7 @@ def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
 
 
 if __name__ == "__main__":
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 13.68%"
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 12%"
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
     for folder in folder_list:
