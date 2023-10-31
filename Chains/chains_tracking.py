@@ -2,12 +2,10 @@
 import os
 from typing import List, Tuple
 import shutil
-import multiprocessing as mp
 import json
 from datetime import datetime
 
 import cv2
-import numpy as np
 
 from chains_detector import ChainDetector
 from tracker import Tracker
@@ -58,7 +56,7 @@ def main(folder_path: str) -> str:
     if os.path.isfile(bg_path):
         background = cv2.imread(bg_path, cv2.IMREAD_UNCHANGED)
     else:
-        background = preprocessing.get_background(image_list, max_int)
+        background = preprocessing.get_background(image_list[0:100], max_int)
         cv2.imwrite(bg_path, background)
     detector.set_background(background)
 
@@ -78,20 +76,16 @@ def main(folder_path: str) -> str:
     return f"{exp_name} done at {datetime.now()}\n"
 
 if __name__=="__main__":
-    parent_folder = "/media/guillaume/Chains/Chains"
+    parent_folder = "/media/guillaume/Chains/Chains/Chains 12%"
     log_file = os.path.join(parent_folder, "log.txt")
     try:
         os.remove(log_file)
     except FileNotFoundError:
         pass
-    # parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/"
     folder_list: List[Tuple[str]] = [(os.path.join(parent_folder, f),) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
+    folder_list.sort()
 
-    # pool = mp.Pool(mp.cpu_count() - 1)
-    # pool.starmap_async(main, folder_list).get()
-    # pool.close()
     for f in folder_list:
         log = main(f[0])
         with open(log_file, 'a') as file:
             file.write(log)
-    # main("/Users/sintes/Desktop/NASGuillaume/Chains/2023-10-06_13h10m14s")
