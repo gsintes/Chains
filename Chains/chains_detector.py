@@ -52,12 +52,12 @@ class ChainDetector(BaseDetector):
             image[image0 < self.background] = 0
         
         image = preprocessing.remove_slowy_varying(image)
-        if self.visualisation:
-            cv2.imwrite(os.path.join(self.save_folder, f"processed{self.count:06d}.png"), image)
         image = preprocessing.binarize(image)
         image = preprocessing.remove_small_objects(image)
         image = preprocessing.elongate_objects(image, self.nb_iter, self.kernel_size)
       
+        if self.visualisation:
+            cv2.imwrite(os.path.join(self.save_folder, f"processed{self.count:06d}.png"), image)      
         if int(self.params["xBottom"]) != 0 and int(self.params["yBottom"]) != 0:
             image = image[int(self.params["yTop"]):int(self.params["yBottom"]), int(
                 self.params["xTop"]):int(self.params["xBottom"])]
