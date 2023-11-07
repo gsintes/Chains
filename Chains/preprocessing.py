@@ -38,7 +38,7 @@ def convert_16to8bits(image: str, max_int: int) -> np.ndarray:
         im8 = im16
     return im8
 
-@timeit
+
 def get_background(image_sequence: List[str], max_int: int) -> np.ndarray:
     """
     Estimate the background image using the minima method.
@@ -73,6 +73,7 @@ def binarize(im: np.ndarray) -> np.ndarray:
         np.ndarray: Binarized image (0 for black, 1 for white).
     """
     threshold = threshold_otsu(im)
+    threshold = max(15, threshold)
     bin_im = (im > threshold)
     return bin_im
 
@@ -105,8 +106,8 @@ def contour_on_the_side(contour: List[List[List[int]]], im_shape: Tuple[int, ...
         y = point[0]
         x = point[1]
         
-        if x == 0 or x == im_shape[0] -1:
+        if x == 0 or x == im_shape[0] - 1:
             return True
-        if y == 0 or y == im_shape[1] -1:
+        if y == 0 or y == im_shape[1] - 1:
             return True
     return False
