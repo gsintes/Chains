@@ -43,7 +43,7 @@ def main(folder_path: str) -> str:
 
     # Set up detector
 
-    visualisation_processed = False
+    visualisation_processed = True
     if visualisation_processed :
         processed_path = os.path.join(folder_path, "Figure", "Processed")
         shutil.rmtree(processed_path, ignore_errors=True)
@@ -76,16 +76,18 @@ def main(folder_path: str) -> str:
     return f"{exp_name} done at {datetime.now()}\n"
 
 if __name__=="__main__":
-    parent_folder = "/media/guillaume/Chains/Chains/Chains 12%"
-    log_file = os.path.join(parent_folder, "log.txt")
-    try:
-        os.remove(log_file)
-    except FileNotFoundError:
-        pass
-    folder_list: List[Tuple[str]] = [(os.path.join(parent_folder, f),) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
-    folder_list.sort()
+    # parent_folder = "/media/guillaume/Chains/Chains/Chains 12%"
+    # log_file = os.path.join(parent_folder, "log.txt")
+    # try:
+    #     os.remove(log_file)
+    # except FileNotFoundError:
+    #     pass
+    # folder_list: List[Tuple[str]] = [(os.path.join(parent_folder, f),) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
+    # folder_list.sort()
 
-    for f in folder_list:
-        log = main(f[0])
-        with open(log_file, 'a') as file:
-            file.write(log)
+    # for f in folder_list:
+    #     log = main(f[0])
+    #     with open(log_file, 'a') as file:
+    #         file.write(log)
+    folder_path = "/Users/sintes/Desktop/2023-10-06_13h10m14s"
+    main(folder_path)
