@@ -8,6 +8,7 @@ import numpy as np
 from skimage.filters.thresholding import threshold_otsu
 from skimage import morphology
 from skimage.filters import gaussian
+from skimage.measure import label, regionprops, regionprops_table
 
 def timeit(func):
     # @wraps(func)
@@ -93,11 +94,23 @@ def elongate_objects(binarized_image: np.ndarray, nb_iter: int = 2, kernel_size:
     Returns:
         np.ndarray: The elongated image.
     """
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
-    dilated_image = binarized_image.copy()
-    for _ in range(nb_iter):
-        dilated_image = morphology.binary_dilation(dilated_image, kernel)
-    return dilated_image
+    label_img = label(binarized_image)
+    regions = regionprops(label_img)
+    binarized_image = binarized_image.astype("int8") * 255
+    # print(binarized_image.dtype)
+    for props in regions:
+        centroid_y = props.centroid[0]
+        centroid_x = props.centroid[1]
+        orientation = props.orientation
+        long_axis = props.axis_major_length
+        new_long = 3 + 0.5 * long_axis
+        minor_axis = max(1, int(0.5 * props.axis_minor_length))
+        c, s = np.cos(-orientation), np.sin(-orientation)
+        R = np.array(((c, -s), (s, c)))      
+        c1 = np.floor(np.array([centroid_x, centroid_y]) + R @ (0, - new_long)).astype("int64")
+        c4 = np.floor(np.array([centroid_x, centroid_y]) + R @ (0,new_long)).astype("int64")
+        binarized_image = cv2.line(binarized_image, c1, c4, 255, minor_axis)
+    return binarized_image 
 
 def contour_on_the_side(contour: List[List[List[int]]], im_shape: Tuple[int, ...]) -> bool:
     """Detect if a contour is touching the side of the image."""

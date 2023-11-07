@@ -43,7 +43,7 @@ def main(folder_path: str) -> str:
 
     # Set up detector
 
-    visualisation_processed = False
+    visualisation_processed = True
     if visualisation_processed :
         processed_path = os.path.join(folder_path, "Figure", "Processed")
         shutil.rmtree(processed_path, ignore_errors=True)
