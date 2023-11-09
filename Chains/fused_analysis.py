@@ -114,28 +114,28 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     plt.close()
 
     plt.figure()
-    sns.pointplot(data=data, x="chain_length", y="velocity", hue="Concentration_LC", linestyles="", errorbar="se")
-    plt.legend(loc=3)
+    sns.pointplot(data=data, x="chain_length", y="velocity", hue="Concentration_LC", linestyles="", errorbar="se", native_scale=True)
+    plt.legend()
     plt.savefig(os.path.join(fig_folder,"errorbar_raw.png"))
     plt.close()
 
     plt.figure()
-    sns.pointplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="se")
+    sns.pointplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="se", native_scale=True)
     plt.plot(range(1, 11), vel_model, "s", label="Model")
-    plt.legend(loc=3)
+    plt.legend()
     plt.savefig(os.path.join(fig_folder, "errorbar_norm.png"))
     plt.close()
 
     plt.figure()
-    sns.pointplot(data=data, x="chain_length", y="velocity", hue="Concentration_LC", linestyles="", errorbar="sd")
-    plt.legend(loc=3)
+    sns.pointplot(data=data, x="chain_length", y="velocity", hue="Concentration_LC", linestyles="", errorbar="sd", native_scale=True)
+    plt.legend()
     plt.savefig(os.path.join(fig_folder,"errorbar_rawsd.png"))
     plt.close()
 
     plt.figure()
-    sns.pointplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="sd")
+    sns.pointplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="sd", native_scale=True)
     plt.plot(range(1, 11), vel_model, "s", label="Model")
-    plt.legend(loc=3)
+    plt.legend()
     plt.savefig(os.path.join(fig_folder, "errorbar_normsd.png"))
     plt.close()
 
@@ -156,7 +156,7 @@ def sampling(data: pd.DataFrame, nb: int = 10) -> List[Tuple[str, int, int]]:
     return res
 
 if __name__ == "__main__":
-    parent_folder = "/media/guillaume/Chains/Chains/"
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains"
     fig_folder = os.path.join(parent_folder, "Figures")
     data = load_all_data(parent_folder)
 
