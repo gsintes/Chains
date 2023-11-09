@@ -150,13 +150,13 @@ def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
 
 
 if __name__ == "__main__":
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 12%"
+    parent_folder = "/media/guillaume/Chains/Chains/Chains 13.68%"
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
     for folder in folder_list:
         print(folder)
         analysis = Analysis(folder)
-        velocity_data = analysis.process()
-        velocity_data.to_csv(os.path.join(folder,"Tracking_Result/vel_data.csv"), index=None)
-        plot_grouped_data(velocity_data, folder)
-    
+        if len(analysis.data) > 0:
+            velocity_data = analysis.process()
+            velocity_data.to_csv(os.path.join(folder,"Tracking_Result/vel_data.csv"), index=None)
+            plot_grouped_data(velocity_data, folder)

@@ -28,10 +28,13 @@ def load_all_data(parent_folder: str) -> pd.DataFrame:
         sub_folders = [os.path.join(c_folder, f) for f in os.listdir(c_folder) if os.path.isdir(os.path.join(c_folder,f))]
         for f in sub_folders:
             exp = f.split("/")[-1]
-            sub_data = pd.read_csv(os.path.join(f, "Tracking_Result/vel_data.csv"))
-            sub_data["Concentration_LC"] = concentration
-            sub_data["Exp"] = exp
-            data = pd.concat([data, sub_data], ignore_index=True)
+            try:
+                sub_data = pd.read_csv(os.path.join(f, "Tracking_Result/vel_data.csv"))
+                sub_data["Concentration_LC"] = concentration
+                sub_data["Exp"] = exp
+                data = pd.concat([data, sub_data], ignore_index=True)
+            except FileNotFoundError:
+                pass
     return data
 
 def velocity_histograms(data: pd.DataFrame, fig_folder: str) -> None:
@@ -153,7 +156,7 @@ def sampling(data: pd.DataFrame, nb: int = 10) -> List[Tuple[str, int, int]]:
     return res
 
 if __name__ == "__main__":
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains"
+    parent_folder = "/media/guillaume/Chains/Chains/"
     fig_folder = os.path.join(parent_folder, "Figures")
     data = load_all_data(parent_folder)
 
