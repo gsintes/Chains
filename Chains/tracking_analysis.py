@@ -16,7 +16,6 @@ class Analysis():
         self.bactLength = 10
         self.frameRate = 30
         self.scale = 6.24
-
         self.path = path
         self.data = self.load_data()
 
@@ -88,8 +87,20 @@ class Analysis():
                 if len_track < thresh:
                     self.velocity_data = self.velocity_data.drop(self.velocity_data[self.velocity_data["id"] == id].index)
 
+    def trace_image(self) -> None:
+        """Draw the image with superimposed trajectories."""
+        plt.figure()
+        plt.xlim((0, 1024))
+        plt.ylim((0, 1024))
+        ids = self.data["id"].unique()
+        for id in ids:
+            sub_data: pd.DataFrame = self.data.loc[self.data["id"]==id]
+            plt.plot(sub_data["xBody"], 1024 - sub_data["yBody"], ".", markersize=1)
+        plt.savefig(os.path.join(self.path, "Figure/trace.png"))
+
     def process(self) -> pd.DataFrame:
         """Performs the analysis."""
+        self.trace_image()
         self.calculate_velocity()
         self.calculate_chain_length()
         ids = self.data["id"].unique()
@@ -150,7 +161,7 @@ def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
 
 
 if __name__ == "__main__":
-    parent_folder = "/media/guillaume/Chains/Chains/Chains 13.68%"
+    parent_folder = "/Users/sintes/Desktop/TestVideosChains"
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
     for folder in folder_list:
