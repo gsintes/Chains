@@ -92,27 +92,53 @@ class Analysis():
         plt.figure()
         plt.xlim((0, 1024))
         plt.ylim((0, 1024))
+        x = np.linspace(0, 1024)
+        y = self.main_axis[1] * (x - 512) / self.main_axis[0] + 512
+        plt.plot(x, 1024 - y, "k--")
         ids = self.data["id"].unique()
         for id in ids:
             sub_data: pd.DataFrame = self.data.loc[self.data["id"]==id]
             plt.plot(sub_data["xBody"], 1024 - sub_data["yBody"], ".", markersize=1)
         plt.savefig(os.path.join(self.path, "Figure/trace.png"))
 
+    def main_direction(self) -> None:
+        """Detect the main direction of the swimming."""
+        x = np.array(self.data["xBody"])
+        y = np.array(self.data["yBody"])
+        cov = np.cov(x, y)
+        val, vect = np.linalg.eig(cov) 
+        val = list(val)
+        i = val.index(max(val))
+        self.main_axis = vect[:, i]
+
+    def sign_trajectory(self, id) -> int:
+        """Get a sign of the trajectory.
+        Return 1 if swimming one way, -1 otherwise. Sign arbitrary."""
+        subdata: pd.DataFrame = self.data.loc[self.data["id"]==id]
+        mean_xvel = subdata["xVel"].mean()
+        mean_yvel = subdata["yVel"].mean()
+        ps = mean_xvel * self.main_axis[0] + mean_yvel * self.main_axis[1]
+        return np.sign(ps)
+
     def process(self) -> pd.DataFrame:
         """Performs the analysis."""
+        self.main_direction()
         self.trace_image()
         self.calculate_velocity()
         self.calculate_chain_length()
         ids = self.data["id"].unique()
         chain_length: List[int] = []
         mean_vel: List[float] = []
+        signs: List[int] = []
         for id in ids:
-            data = self.data.loc[self.data["id"] == id]
+            data: pd.DataFrame = self.data.loc[self.data["id"] == id]
             chain_length.append(int(min(data["bactNumber"])))
             mean_vel.append(data["Velocity"].mean())
+            signs.append(self.sign_trajectory(id))
         self.velocity_data = pd.DataFrame({"id": ids,
                              "chain_length": chain_length,
-                             "velocity": mean_vel})
+                             "velocity": mean_vel,
+                             "sign": signs})
         self.clean()
         single_vel = self.velocity_data.loc[self.velocity_data["chain_length"] == 1, "velocity"].mean()
         self.velocity_data["Single_vel"] = single_vel
