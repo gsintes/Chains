@@ -154,9 +154,20 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="sd", native_scale=True)
     plt.plot(range(1, 11), vel_model, "s", label="Model")
-    plt.legend()
     plt.savefig(os.path.join(fig_folder, "errorbar_normsd.png"))
     plt.close()
+
+def plot_vel_by_exp(data: pd.DataFrame, fig_folder: str) -> None:
+    """Plot the velocity as a function of chain length grouped by experiment with one plot by concentration of LC."""
+    concentrations = data["Concentration_LC"].unique()
+    for c in concentrations:
+        subdata: pd.DataFrame = data.loc[data["Concentration_LC"]==c]
+        plt.figure()
+        sns.pointplot(data=subdata, x="chain_length", y="velocity", hue="Exp", linestyles="", errorbar="se", native_scale=True, legend=None)
+        plt.savefig(os.path.join(fig_folder, f"groupedExp_{c}%.png"))
+        plt.close()
+        lenghts = subdata["chain_length"].unique()
+        folder = os.path.join(fig_folder, f"distrib_grouped_vel_{c}%")
 
 def sampling(data: pd.DataFrame, nb: int = 10) -> List[Tuple[str, int, int]]:
     """Give a sampling of the data to check detection."""
@@ -185,4 +196,5 @@ if __name__ == "__main__":
     plots_velocity_vs_length(data, fig_folder)
     velocity_histograms(data, fig_folder)
     size_distribution(data, fig_folder)
+    plot_vel_by_exp(data, fig_folder)
    
