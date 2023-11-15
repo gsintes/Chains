@@ -6,6 +6,7 @@ from typing import List, Tuple
 from random import sample
 
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -97,6 +98,24 @@ def size_distribution(data: pd.DataFrame, fig_folder: str) -> None:
     plt.xlabel("Chain length")
     plt.savefig(os.path.join(fig_folder, "chain_length_dist_norm.png")) 
 
+def plot_proportion_sign(data: pd.DataFrame, fig_folder: str) -> None:
+    """Plot the proportion of bacteria swimming in one direction."""
+    exps = data["Exp"].unique()
+    props: List[float] = []
+    for exp in exps:
+        sub_data = data.loc[data["Exp"]==exp]
+        prop = len(sub_data[sub_data["sign"]== 1]) / len(sub_data)
+        props.append(max(prop, 1 - prop))
+    plt.figure()
+    plt.plot(np.ones(len(props)), props, "k.")
+    plt.ylabel("Proportion per direction")
+    plt.savefig(os.path.join(fig_folder, "signprop_points.png"))
+
+    plt.figure()
+    sns.boxplot(props)
+    plt.ylabel("Proportion per direction")
+    plt.savefig(os.path.join(fig_folder, "signprop_box.png"))
+
 def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     """Generate the plots velocity vs chain length."""
     vel_model = []
@@ -162,6 +181,7 @@ if __name__ == "__main__":
 
     data.to_csv(os.path.join(parent_folder, "chain_data.csv"))
 
+    plot_proportion_sign(data, fig_folder)
     plots_velocity_vs_length(data, fig_folder)
     velocity_histograms(data, fig_folder)
     size_distribution(data, fig_folder)

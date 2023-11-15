@@ -94,12 +94,13 @@ class Analysis():
         plt.ylim((0, 1024))
         x = np.linspace(0, 1024)
         y = self.main_axis[1] * (x - 512) / self.main_axis[0] + 512
-        plt.plot(x, 1024 - y, "k--")
         ids = self.data["id"].unique()
         for id in ids:
             sub_data: pd.DataFrame = self.data.loc[self.data["id"]==id]
             plt.plot(sub_data["xBody"], 1024 - sub_data["yBody"], ".", markersize=1)
+        plt.plot(x, 1024 - y, "k--")
         plt.savefig(os.path.join(self.path, "Figure/trace.png"))
+        plt.close()
 
     def main_direction(self) -> None:
         """Detect the main direction of the swimming."""
@@ -187,7 +188,7 @@ def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
 
 
 if __name__ == "__main__":
-    parent_folder = "/Users/sintes/Desktop/TestVideosChains"
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 12%"
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
     for folder in folder_list:
