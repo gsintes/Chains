@@ -166,8 +166,10 @@ def plot_vel_by_exp(data: pd.DataFrame, fig_folder: str) -> None:
         sns.pointplot(data=subdata, x="chain_length", y="velocity", hue="Exp", linestyles="", errorbar="se", native_scale=True, legend=None)
         plt.savefig(os.path.join(fig_folder, f"groupedExp_{c}%.png"))
         plt.close()
-        lenghts = subdata["chain_length"].unique()
-        folder = os.path.join(fig_folder, f"distrib_grouped_vel_{c}%")
+        plt.figure()
+        sns.pointplot(data=subdata, x="chain_length", y="Normalized_vel", hue="Exp", linestyles="", errorbar="se", native_scale=True, legend=None)
+        plt.savefig(os.path.join(fig_folder, f"Norm_groupedExp_{c}%.png"))
+        plt.close()
 
 def sampling(data: pd.DataFrame, nb: int = 10) -> List[Tuple[str, int, int]]:
     """Give a sampling of the data to check detection."""
