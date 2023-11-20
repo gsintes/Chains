@@ -20,6 +20,23 @@ def get_concentration(concentration_folder: str) -> float:
     group = re.match(template, folder_name)
     return float(group[1])
 
+def get_date(exp_name: str) -> str:
+    """Get the date from the experiment name."""
+    return exp_name.split("_")[0]
+
+def normalize_velocity(data: pd.DataFrame) -> pd.DataFrame:
+    """Get the normalized velocity using average single vel of the day."""
+    for concentration in data["Concentration_LC"].unique():
+        subdata: pd.DataFrame = data.loc[data["Concentration_LC"]==concentration]
+        dates = subdata["Date"].unique()
+        for date in dates:
+            subdata: pd.DataFrame = data.loc[(data["Date"]==date)&(data["Concentration_LC"]==concentration)]
+            subdata: pd.DataFrame = subdata.loc[subdata["chain_length"]==1]
+            single_vel = subdata["velocity"].mean()
+            data.loc[(data["Concentration_LC"]==concentration) & (data["Date"]==date), "Single_vel"] = single_vel
+        data["Normalized_vel"] = data["velocity"] / data["Single_vel"]
+    return data
+    
 def load_all_data(parent_folder: str) -> pd.DataFrame:
     """Load all the datas from the subfolders."""
     concentration_folders = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f)) and f.startswith("Chains")]
@@ -33,9 +50,11 @@ def load_all_data(parent_folder: str) -> pd.DataFrame:
                 sub_data = pd.read_csv(os.path.join(f, "Tracking_Result/vel_data.csv"))
                 sub_data["Concentration_LC"] = concentration
                 sub_data["Exp"] = exp
+                sub_data["Date"] = get_date(exp)
                 data = pd.concat([data, sub_data], ignore_index=True)
             except FileNotFoundError:
                 pass
+    data = normalize_velocity(data)
     return data
 
 def velocity_histograms(data: pd.DataFrame, fig_folder: str) -> None:
@@ -200,3 +219,8 @@ if __name__ == "__main__":
     size_distribution(data, fig_folder)
     plot_vel_by_exp(data, fig_folder)
    
+    dates = data["Date"].unique()
+    for date in dates:
+        subdata = data.loc[data["Date"]==date]
+        subdata = subdata[subdata["chain_length"]==1]
+        print(date, len(subdata))
