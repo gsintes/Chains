@@ -11,8 +11,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-from model import calculate_velocity
-
 def get_concentration(concentration_folder: str) -> float:
     """Get the concentration from the folder name."""
     folder_name = concentration_folder.split("/")[-1]
@@ -27,11 +25,10 @@ def get_date(exp_name: str) -> str:
 def normalize_velocity(data: pd.DataFrame) -> pd.DataFrame:
     """Get the normalized velocity using average single vel of the day."""
     for concentration in data["Concentration_LC"].unique():
-        subdata: pd.DataFrame = data.loc[data["Concentration_LC"]==concentration]
-        dates = subdata["Date"].unique()
+        sub_data: pd.DataFrame = data.loc[data["Concentration_LC"]==concentration]
+        dates = sub_data["Date"].unique()
         for date in dates:
-            subdata: pd.DataFrame = data.loc[(data["Date"]==date)&(data["Concentration_LC"]==concentration)]
-            subdata: pd.DataFrame = subdata.loc[subdata["chain_length"]==1]
+            subdata: pd.DataFrame = data.loc[(data["Date"]==date)&(data["Concentration_LC"]==concentration)&(data["chain_length"]==1)]
             single_vel = subdata["velocity"].mean()
             data.loc[(data["Concentration_LC"]==concentration) & (data["Date"]==date), "Single_vel"] = single_vel
         data["Normalized_vel"] = data["velocity"] / data["Single_vel"]
@@ -137,10 +134,6 @@ def plot_proportion_sign(data: pd.DataFrame, fig_folder: str) -> None:
 
 def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     """Generate the plots velocity vs chain length."""
-    vel_model = []
-    for n in range(1, 11):
-        vel_model.append(calculate_velocity(n, 1) / calculate_velocity(1, 1))
-
     plt.figure()
     sns.scatterplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC")
     plt.savefig(os.path.join(fig_folder, "scatter_norm.png"))
@@ -159,7 +152,6 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="se", native_scale=True)
-    plt.plot(range(1, 11), vel_model, "s", label="Model")
     plt.legend()
     plt.savefig(os.path.join(fig_folder, "errorbar_norm.png"))
     plt.close()
@@ -172,7 +164,6 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="sd", native_scale=True)
-    plt.plot(range(1, 11), vel_model, "s", label="Model")
     plt.savefig(os.path.join(fig_folder, "errorbar_normsd.png"))
     plt.close()
 
@@ -218,9 +209,3 @@ if __name__ == "__main__":
     velocity_histograms(data, fig_folder)
     size_distribution(data, fig_folder)
     plot_vel_by_exp(data, fig_folder)
-   
-    dates = data["Date"].unique()
-    for date in dates:
-        subdata = data.loc[data["Date"]==date]
-        subdata = subdata[subdata["chain_length"]==1]
-        print(date, len(subdata))
