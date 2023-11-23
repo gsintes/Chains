@@ -1,6 +1,7 @@
 """Model of chain swimming."""
 
 from typing import Dict
+from abc import ABC, abstractmethod
 
 import matplotlib.pyplot as plt
 from numpy import pi, sin, cos, log, arctan
@@ -86,7 +87,52 @@ def naive_model(n: int, alpha:float)-> float:
 
     return Bf / (Af + A0)
 
-class SimpleInteractionModel:
+class Model(ABC):
+    """Abstract for model."""
+    @abstractmethod
+    def calculate_body_rotation(self, flagella_rot: float) -> float:
+        """Get the body rotation velocity from the flagella rotation velocity."""
+        pass
+    
+    @abstractmethod
+    def calculate_velocity(self, flagella_rot: float=1) -> float:
+        """Get the swimming velocity from the flagella rotation velocity."""
+        pass
+    
+    @abstractmethod
+    def calculate_force_body(self, flagella_rot: float=1) -> float:
+        """Calculate the force on the body."""
+        pass
+    
+    @abstractmethod
+    def calculate_torque_body(self, flagella_rot: float=1) -> float:
+        """Calculate the torque on the body."""
+        pass
+
+    @abstractmethod
+    def calculate_force_flagella(self, flagella_rot: float=1) -> float:
+        """Calculate the force on the flagella."""
+        pass
+
+    
+    @abstractmethod
+    def calculate_torque_flagella(self, flagella_rot: float=1) -> float:
+        """Calculate the torque on the flagella."""
+        pass
+
+    def process(self, flagella_rot: float=1) -> Dict[str, float]:
+        """Perform all the calculations."""
+        return {"n": self.n,
+                "flagella_rot": flagella_rot,
+                "body_rot": self.calculate_body_rotation(flagella_rot),
+                "velocity": self.calculate_velocity(flagella_rot),
+                "F0": self.calculate_force_body(flagella_rot),
+                "T0": self.calculate_torque_body(flagella_rot),
+                "F": self.calculate_force_flagella(flagella_rot),
+                "T": self.calculate_torque_flagella(flagella_rot)}
+        
+    
+class SimpleInteractionModel(Model):
     """Simple interaction model where we considerer that the flagella around the body will experience a rotation frequency of w + W.
     We do not consider the fluid motion create by the flagella around the body to determine W."""
     def __init__(self, n: int) -> None:
@@ -133,16 +179,56 @@ class SimpleInteractionModel:
         body_rot = self.calculate_body_rotation(flagella_rot)
         return - self.Bt * v + self.Dbf * body_rot + self.Dt * flagella_rot
     
-    def process(self, flagella_rot: float=1) -> Dict[str, float]:
-        """Perform all the calculations."""
-        return {"n": self.n,
-                "flagella_rot": flagella_rot,
-                "body_rot": self.calculate_body_rotation(flagella_rot),
-                "velocity": self.calculate_velocity(flagella_rot),
-                "F0": self.calculate_force_body(flagella_rot),
-                "T0": self.calculate_torque_body(flagella_rot),
-                "F": self.calculate_force_flagella(flagella_rot),
-                "T": self.calculate_torque_flagella(flagella_rot)}  
+    
+    
+class InteractionModel2(Model):
+    """Simple interaction model where we considerer that the flagella around the body will experience a rotation frequency of w + W."""
+    def __init__(self, n: int) -> None:
+        self.n = n
+        self.A0 = get_A0(n)
+        self.D0n  = get_D0(n)
+        self.D0n1 = get_D0(n - 1)
+
+        around_body_length = 2 * (self.n - 1) * LONG_AXIS
+        full_length = LENGTH + around_body_length
+        self.At = get_A_flagella(full_length)
+        self.Bt = get_B_flagella(full_length)
+        self.Bbf = get_B_flagella(around_body_length)
+        self.Dt = get_D_flagella(full_length)
+        self.Dbf = get_D_flagella(around_body_length)
+
+    def calculate_body_rotation(self, flagella_rot: float=1) -> float:
+        """Get the body rotation velocity from the flagella rotation velocity."""
+        Asum = self.At + self.A0
+        beta = (self.Dt * Asum - self.Bt ** 2 - Asum * self.D0n1) / (Asum * (self.D0n + ((self.Bt * self.Bbf) / Asum) - self.Dbf)) 
+        return beta * flagella_rot
+    
+    def calculate_velocity(self, flagella_rot: float=1) -> float:
+        """Get the swimming velocity from the flagella rotation velocity."""
+        body_rot = self.calculate_body_rotation(flagella_rot)
+        return (self.Bt * flagella_rot + self.Bbf * body_rot) / (self.At + self.A0)
+    
+    def calculate_force_body(self, flagella_rot: float=1) -> float:
+        """Calculate the force on the body."""
+        return - self.A0 * self.calculate_velocity(flagella_rot)
+
+    def calculate_torque_body(self, flagella_rot: float=1) -> float:
+        """Calculate the torque on the body."""
+        return - self.D0n * self.calculate_body_rotation(flagella_rot) - self.D0n1 * flagella_rot
+    
+    def calculate_force_flagella(self, flagella_rot: float=1) -> float:
+        """Calculate the force on the flagella."""
+        v = self.calculate_velocity(flagella_rot)
+        body_rot = self.calculate_body_rotation(flagella_rot)
+        return - self.At * v + self.Bt * flagella_rot + self.Bbf * body_rot
+    
+    def calculate_torque_flagella(self, flagella_rot: float=1) -> float:
+        """Calculate the torque on the flagella."""
+        v = self.calculate_velocity(flagella_rot)
+        body_rot = self.calculate_body_rotation(flagella_rot)
+        return - self.Bt * v + self.Dbf * body_rot + self.Dt * flagella_rot
+    
+
 
 if __name__=="__main__":
     res = {}
@@ -158,7 +244,6 @@ if __name__=="__main__":
         res[alpha] = vel
         # plt.plot(range(1, 13), vel, "o", label=f"Naive: alpha = {alpha}")
 
-    vel = []
     data = pd.DataFrame()
     for n in range(1, 13):
         model = SimpleInteractionModel(n)
@@ -169,24 +254,48 @@ if __name__=="__main__":
             data = pd.concat([data, res])
     data["Normalized_vel"] = data["velocity"] / data.loc[1, "velocity"]
 
-    plt.plot(data["n"], data["Normalized_vel"] , "o", label="Interactions")
+
+    data2 = pd.DataFrame()
+    for n in range(1, 13):
+        model2 = InteractionModel2(n)
+        res = pd.DataFrame(model2.process(), index=[n])
+        if len(data2) == 0:
+            data2 = pd.DataFrame(res)
+        else:
+            data2 = pd.concat([data2, res])
+    data2["Normalized_vel"] = data2["velocity"] / data2.loc[1, "velocity"]
+
+    
+
+    plt.plot(data["n"], data["Normalized_vel"] , "o", label="Interactions 1")
+    plt.plot(data2["n"], data2["Normalized_vel"] , "s", label="Interactions 2")
     plt.ylabel("V / Vsingle")
     plt.xlabel("Chain length")
     plt.legend()
 
     plt.figure()
-    plt.plot(data["n"], data["F0"], "o", label="$F_0$")
-    plt.plot(data["n"], data["F"], "o", label="$F_f$")
-    plt.plot(data["n"], data["F0"] + data["F"], "o", label="$F_0 + F_f$")
+    plt.plot(data["n"], data["F"], "o", label="1")
+    plt.plot(data2["n"], data2["F"], "s", label="2")
+    # plt.plot(data["n"], data["F0"] + data["F"], "o", label="$F_0 + F_f$")
 
     plt.xlabel("Chain length")
-    plt.ylabel("F (in pN)") #TODO check
+    plt.ylabel("F (in pN)")
+    plt.legend()
 
     plt.figure()
     plt.plot(data["n"], data["T0"], "o", label="$T_0$")
-    plt.plot(data["n"], data["T"], "o", label="$T_f$")
-    plt.plot(data["n"], data["T0"] + data["T"], "o", label="$T_0 + T_f$")
+    plt.plot(data["n"], data2["T0"], "o", label="$T_f$")
+    # plt.plot(data["n"], data["T0"] + data["T"], "o", label="$T_0 + T_f$")
 
     plt.xlabel("Chain length")
-    plt.ylabel("T (in pN.um)") #TODO check
+    plt.ylabel("T (in pN.um)") 
+    plt.legend()    
+    
+
+    plt.figure()
+    plt.plot(data["n"], data["body_rot"], "o", label="1")
+    plt.plot(data2["n"], data2["body_rot"], "s", label="2")
+    plt.xlabel("Chain length")
+    plt.ylabel("Body rotation")
+    plt.legend()
     plt.show(block=True)
