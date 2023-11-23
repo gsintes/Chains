@@ -1,6 +1,6 @@
 """Model of chain swimming."""
 
-from typing import Dict
+from typing import Dict, Type
 import os
 from abc import ABC, abstractmethod
 
@@ -92,6 +92,9 @@ def naive_model(n: int, alpha:float)-> float:
 
 class Model(ABC):
     """Abstract for model."""
+    def __init__(self, n: int) -> None:
+        self.n: int = n
+
     @abstractmethod
     def calculate_body_rotation(self, flagella_rot: float) -> float:
         """Get the body rotation velocity from the flagella rotation velocity."""
@@ -139,7 +142,7 @@ class SimpleInteractionModel(Model):
     """Simple interaction model where we considerer that the flagella around the body will experience a rotation frequency of w + W.
     We do not consider the fluid motion create by the flagella around the body to determine W."""
     def __init__(self, n: int) -> None:
-        self.n = n
+        super().__init__(n)
         self.A0 = get_A0(n)
         self.D0  = get_D0(n)
 
@@ -186,7 +189,7 @@ class SimpleInteractionModel(Model):
 class InteractionModel2(Model):
     """Simple interaction model where we considerer that the flagella around the body will experience a rotation frequency of w + W."""
     def __init__(self, n: int) -> None:
-        self.n = n
+        super().__init__(n)
         self.A0 = get_A0(n)
         self.D0n  = get_D0(n)
         self.D0n1 = get_D0(n - 1)
@@ -233,7 +236,7 @@ class InteractionModel2(Model):
 
 class RunnerModel:
     """Run the model for different chain lengths and plots."""
-    def __init__(self, model, max_length: int) -> None:
+    def __init__(self, model: Type[Model], max_length: int) -> None:
         self.model = model
         self.max_length = max_length
         self.range = range(max_length)
@@ -287,8 +290,6 @@ class RunnerModel:
         plt.ylabel("Body rotation")
         plt.savefig(os.path.join(fig_folder, "body_rot.png"))
         plt.close()
-
-        
 
 
 if __name__=="__main__":
