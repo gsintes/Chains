@@ -1,6 +1,7 @@
 """Model of chain swimming."""
 
 from typing import Dict
+import os
 from abc import ABC, abstractmethod
 
 import matplotlib.pyplot as plt
@@ -78,6 +79,7 @@ def get_D_flagella(length: float,
     """Calculate the D coefficient for the flagella of a given length."""
     return length * (pitch / (2 * pi)) ** 2 * (sin(psi) ** 2 / cos(psi) ** 3) * (kn * cos(psi) ** 2 + kt * sin(psi) ** 2) 
 
+
 def naive_model(n: int, alpha:float)-> float:
     """Calculate the velocity of the chain."""
     A0 = get_A0(n)
@@ -86,6 +88,7 @@ def naive_model(n: int, alpha:float)-> float:
     Bf = get_B_flagella(L)
 
     return Bf / (Af + A0)
+
 
 class Model(ABC):
     """Abstract for model."""
@@ -130,8 +133,8 @@ class Model(ABC):
                 "T0": self.calculate_torque_body(flagella_rot),
                 "F": self.calculate_force_flagella(flagella_rot),
                 "T": self.calculate_torque_flagella(flagella_rot)}
-        
-    
+
+
 class SimpleInteractionModel(Model):
     """Simple interaction model where we considerer that the flagella around the body will experience a rotation frequency of w + W.
     We do not consider the fluid motion create by the flagella around the body to determine W."""
@@ -179,8 +182,7 @@ class SimpleInteractionModel(Model):
         body_rot = self.calculate_body_rotation(flagella_rot)
         return - self.Bt * v + self.Dbf * body_rot + self.Dt * flagella_rot
     
-    
-    
+
 class InteractionModel2(Model):
     """Simple interaction model where we considerer that the flagella around the body will experience a rotation frequency of w + W."""
     def __init__(self, n: int) -> None:
@@ -227,14 +229,73 @@ class InteractionModel2(Model):
         v = self.calculate_velocity(flagella_rot)
         body_rot = self.calculate_body_rotation(flagella_rot)
         return - self.Bt * v + self.Dbf * body_rot + self.Dt * flagella_rot
-    
+
+
+class RunnerModel:
+    """Run the model for different chain lengths and plots."""
+    def __init__(self, model, max_length: int) -> None:
+        self.model = model
+        self.max_length = max_length
+        self.range = range(max_length)
+
+    def run_serie(self):
+        """Run a serie of calculation from the model for different chain lengths."""
+        data = pd.DataFrame()
+        for n in range(1, 13):
+            modeln = self.model(n)
+            res = pd.DataFrame(modeln.process(), index=[n])
+            if len(data) == 0:
+                data = pd.DataFrame(res)
+            else:
+                data = pd.concat([data, res])
+        data["Normalized_vel"] = data["velocity"] / data.loc[1, "velocity"]
+        self.data = data
+        return data
+
+    def plot(self, fig_folder: str):
+        """Plot the data from the model as a function of chain length."""
+        plt.figure()
+        plt.plot(self.data["n"], self.data["Normalized_vel"] , "bo")
+        plt.ylabel("$V / V_{single}$")
+        plt.xlabel("Chain length")
+        plt.savefig(os.path.join(fig_folder, "norm_vel.png"))
+        plt.close()
+
+        plt.figure()
+        plt.plot(self.data["n"], self.data["F"], "o", label="$F_f$")
+        plt.plot(data["n"], self.data["F0"], "o", label="$F_0$")
+        plt.plot(self.data["n"], self.data["F0"] + data["F"], "o", label="$F_0 + F_f$")
+        plt.xlabel("Chain length")
+        plt.ylabel("Force")
+        plt.legend()
+        plt.savefig(os.path.join(fig_folder, "force.png"))
+        plt.close()
+
+        plt.figure()
+        plt.plot(self.data["n"], self.data["T0"], "o", label="$T_0$")
+        plt.plot(self.data["n"], self.data["T"], "o", label="$T_f$")
+        plt.plot(data["n"], data["T0"] + data["T"], "o", label="$T_0 + T_f$")
+        plt.xlabel("Chain length")
+        plt.ylabel("Torque") 
+        plt.legend() 
+        plt.savefig(os.path.join(fig_folder, "torque.png"))
+        plt.close()   
+
+        plt.figure()
+        plt.plot(self.data["n"], self.data["body_rot"], "o")
+        plt.xlabel("Chain length")
+        plt.ylabel("Body rotation")
+        plt.savefig(os.path.join(fig_folder, "body_rot.png"))
+        plt.close()
+
+        
 
 
 if __name__=="__main__":
     res = {}
     alpha_val = [0, 1]
 
-    plt.figure()
+    
 
     for alpha in alpha_val:
         vel = []
@@ -242,60 +303,15 @@ if __name__=="__main__":
             vel.append(naive_model(n, alpha) / naive_model(1, 1))
 
         res[alpha] = vel
-        # plt.plot(range(1, 13), vel, "o", label=f"Naive: alpha = {alpha}")
-
-    data = pd.DataFrame()
-    for n in range(1, 13):
-        model = SimpleInteractionModel(n)
-        res = pd.DataFrame(model.process(), index=[n])
-        if len(data) == 0:
-            data = pd.DataFrame(res)
-        else:
-            data = pd.concat([data, res])
-    data["Normalized_vel"] = data["velocity"] / data.loc[1, "velocity"]
+        plt.plot(range(1, 13), vel, "o", label=f"Naive: alpha = {alpha}")
 
 
-    data2 = pd.DataFrame()
-    for n in range(1, 13):
-        model2 = InteractionModel2(n)
-        res = pd.DataFrame(model2.process(), index=[n])
-        if len(data2) == 0:
-            data2 = pd.DataFrame(res)
-        else:
-            data2 = pd.concat([data2, res])
-    data2["Normalized_vel"] = data2["velocity"] / data2.loc[1, "velocity"]
+    runner = RunnerModel(SimpleInteractionModel, 6)
+    data = runner.run_serie()
+    runner.plot("/Users/sintes/Desktop/NASGuillaume/Chains/Figures/Models/Interaction1")
+
+    runner = RunnerModel(InteractionModel2, 6)
+    data2 = runner.run_serie()
+    runner.plot("/Users/sintes/Desktop/NASGuillaume/Chains/Figures/Models/Interaction2")    
 
     
-
-    plt.plot(data["n"], data["Normalized_vel"] , "o", label="Interactions 1")
-    plt.plot(data2["n"], data2["Normalized_vel"] , "s", label="Interactions 2")
-    plt.ylabel("V / Vsingle")
-    plt.xlabel("Chain length")
-    plt.legend()
-
-    plt.figure()
-    plt.plot(data["n"], data["F"], "o", label="1")
-    plt.plot(data2["n"], data2["F"], "s", label="2")
-    # plt.plot(data["n"], data["F0"] + data["F"], "o", label="$F_0 + F_f$")
-
-    plt.xlabel("Chain length")
-    plt.ylabel("F (in pN)")
-    plt.legend()
-
-    plt.figure()
-    plt.plot(data["n"], data["T0"], "o", label="$T_0$")
-    plt.plot(data["n"], data2["T0"], "o", label="$T_f$")
-    # plt.plot(data["n"], data["T0"] + data["T"], "o", label="$T_0 + T_f$")
-
-    plt.xlabel("Chain length")
-    plt.ylabel("T (in pN.um)") 
-    plt.legend()    
-    
-
-    plt.figure()
-    plt.plot(data["n"], data["body_rot"], "o", label="1")
-    plt.plot(data2["n"], data2["body_rot"], "s", label="2")
-    plt.xlabel("Chain length")
-    plt.ylabel("Body rotation")
-    plt.legend()
-    plt.show(block=True)
