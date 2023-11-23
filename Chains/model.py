@@ -77,17 +77,7 @@ def get_D_flagella(length: float,
                    kt: float=get_kt(),
                    psi: float=get_psi())-> float:
     """Calculate the D coefficient for the flagella of a given length."""
-    return length * (pitch / (2 * pi)) ** 2 * (sin(psi) ** 2 / cos(psi) ** 3) * (kn * cos(psi) ** 2 + kt * sin(psi) ** 2) 
-
-
-def naive_model(n: int, alpha:float)-> float:
-    """Calculate the velocity of the chain."""
-    A0 = get_A0(n)
-    L = LENGTH + 2 * alpha * (n - 1) * LONG_AXIS
-    Af = get_A_flagella(L)
-    Bf = get_B_flagella(L)
-
-    return Bf / (Af + A0)
+    return length * (pitch / (2 * pi)) ** 2 * (sin(psi) ** 2 / cos(psi) ** 3) * (kn * cos(psi) ** 2 + kt * sin(psi) ** 2)
 
 
 class Model(ABC):
@@ -96,7 +86,7 @@ class Model(ABC):
         self.n: int = n
 
     @abstractmethod
-    def calculate_body_rotation(self, flagella_rot: float) -> float:
+    def calculate_body_rotation(self, flagella_rot: float=1) -> float:
         """Get the body rotation velocity from the flagella rotation velocity."""
         pass
     
@@ -136,6 +126,39 @@ class Model(ABC):
                 "T0": self.calculate_torque_body(flagella_rot),
                 "F": self.calculate_force_flagella(flagella_rot),
                 "T": self.calculate_torque_flagella(flagella_rot)}
+
+class NaiveModel(Model):
+    def __init__(self, n: int, alpha: float=1) -> None:
+        super().__init__(n)
+        self.alpha = alpha
+        self.A0 = get_A0(n)
+        self.D0 = get_D0(n)
+        self.L = LENGTH + 2 * alpha * (n - 1) * LONG_AXIS
+        self.Af = get_A_flagella(self.L)
+        self.Bf = get_B_flagella(self.L)
+        self.Df = get_D_flagella(self.L)
+
+    def calculate_body_rotation(self, flagella_rot: float=1) -> float:
+        return (self.Df * (self.A0 + self.Af) - self.Bf ** 2) * flagella_rot / (self.D0 * (self.A0 + self.Af))
+    
+    def calculate_velocity(self, flagella_rot: float = 1) -> float:
+        return self.Bf * flagella_rot / (self.A0 + self.Af)
+
+    def calculate_force_body(self, flagella_rot: float = 1) -> float:
+        v = self.calculate_velocity(flagella_rot)
+        return - self.A0 * v
+    
+    def calculate_force_flagella(self, flagella_rot: float = 1) -> float:
+        v = self.calculate_velocity(flagella_rot)
+        return - self.Af * v + self.Bf * flagella_rot
+    
+    def calculate_torque_body(self, flagella_rot: float = 1) -> float:
+        body_rot = self.calculate_body_rotation(flagella_rot)
+        return - self.D0 * body_rot
+    
+    def calculate_torque_flagella(self, flagella_rot: float = 1) -> float:
+        v = self.calculate_velocity(flagella_rot)
+        return - self.Df * v + self.Bf * flagella_rot
 
 
 class SimpleInteractionModel(Model):
@@ -293,19 +316,9 @@ class RunnerModel:
 
 
 if __name__=="__main__":
-    res = {}
-    alpha_val = [0, 1]
-
-    
-
-    for alpha in alpha_val:
-        vel = []
-        for n in range(1, 13):
-            vel.append(naive_model(n, alpha) / naive_model(1, 1))
-
-        res[alpha] = vel
-        plt.plot(range(1, 13), vel, "o", label=f"Naive: alpha = {alpha}")
-
+    runner = RunnerModel(NaiveModel, 6)
+    data = runner.run_serie()
+    runner.plot("/Users/sintes/Desktop/NASGuillaume/Chains/Figures/Models/NaiveAlpha1")
 
     runner = RunnerModel(SimpleInteractionModel, 6)
     data = runner.run_serie()
