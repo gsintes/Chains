@@ -24,7 +24,7 @@ def get_A0(n: int,
     """Calculate the coefficient between force and velocity for a body chain of length n.
     
     F0 = - A0 v"""
-    return (4 * pi * eta * long_axis * n) / (log(2 * n * long_axis / small_axis) - 0.5)
+    return - (4 * pi * eta * long_axis * n) / (log(2 * small_axis / (long_axis * n )) - 0.5)
 
 def get_D0(n: int,
            eta: float=ETA,
