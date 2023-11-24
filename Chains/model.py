@@ -127,8 +127,9 @@ class Model(ABC):
                 "F": self.calculate_force_flagella(flagella_rot),
                 "T": self.calculate_torque_flagella(flagella_rot)}
 
+
 class NaiveModel(Model):
-    def __init__(self, n: int, alpha: float=1) -> None:
+    def __init__(self, n: int, alpha: float=0) -> None:
         super().__init__(n)
         self.alpha = alpha
         self.A0 = get_A0(n)
@@ -158,7 +159,7 @@ class NaiveModel(Model):
     
     def calculate_torque_flagella(self, flagella_rot: float = 1) -> float:
         v = self.calculate_velocity(flagella_rot)
-        return - self.Df * v + self.Bf * flagella_rot
+        return - self.Bf * v + self.Df * flagella_rot
 
 
 class SimpleInteractionModel(Model):
@@ -262,12 +263,12 @@ class RunnerModel:
     def __init__(self, model: Type[Model], max_length: int) -> None:
         self.model = model
         self.max_length = max_length
-        self.range = range(max_length)
+        self.range = range(1, max_length)
 
     def run_serie(self):
         """Run a serie of calculation from the model for different chain lengths."""
         data = pd.DataFrame()
-        for n in range(1, 13):
+        for n in self.range:
             modeln = self.model(n)
             res = pd.DataFrame(modeln.process(), index=[n])
             if len(data) == 0:
@@ -289,8 +290,8 @@ class RunnerModel:
 
         plt.figure()
         plt.plot(self.data["n"], self.data["F"], "o", label="$F_f$")
-        plt.plot(data["n"], self.data["F0"], "o", label="$F_0$")
-        plt.plot(self.data["n"], self.data["F0"] + data["F"], "o", label="$F_0 + F_f$")
+        plt.plot(self.data["n"], self.data["F0"], "o", label="$F_0$")
+        plt.plot(self.data["n"], self.data["F0"] + self.data["F"], "o", label="$F_0 + F_f$")
         plt.xlabel("Chain length")
         plt.ylabel("Force")
         plt.legend()
@@ -300,7 +301,7 @@ class RunnerModel:
         plt.figure()
         plt.plot(self.data["n"], self.data["T0"], "o", label="$T_0$")
         plt.plot(self.data["n"], self.data["T"], "o", label="$T_f$")
-        plt.plot(data["n"], data["T0"] + data["T"], "o", label="$T_0 + T_f$")
+        plt.plot(self.data["n"], self.data["T0"] + self.data["T"], "o", label="$T_0 + T_f$")
         plt.xlabel("Chain length")
         plt.ylabel("Torque") 
         plt.legend() 
@@ -316,16 +317,14 @@ class RunnerModel:
 
 
 if __name__=="__main__":
-    runner = RunnerModel(NaiveModel, 6)
+    runner = RunnerModel(NaiveModel, 8)
     data = runner.run_serie()
-    runner.plot("/Users/sintes/Desktop/NASGuillaume/Chains/Figures/Models/NaiveAlpha1")
+    runner.plot("/Users/sintes/Desktop/NASGuillaume/Chains/Figures/Models/NaiveAlpha0")
 
-    runner = RunnerModel(SimpleInteractionModel, 6)
+    runner = RunnerModel(SimpleInteractionModel, 8)
     data = runner.run_serie()
     runner.plot("/Users/sintes/Desktop/NASGuillaume/Chains/Figures/Models/Interaction1")
 
-    runner = RunnerModel(InteractionModel2, 6)
+    runner = RunnerModel(InteractionModel2, 8)
     data2 = runner.run_serie()
     runner.plot("/Users/sintes/Desktop/NASGuillaume/Chains/Figures/Models/Interaction2")    
-
-    
