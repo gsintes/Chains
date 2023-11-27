@@ -10,6 +10,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from model import SimpleInteractionModel, RunnerModel
+
 
 def get_concentration(concentration_folder: str) -> float:
     """Get the concentration from the folder name."""
@@ -134,6 +136,8 @@ def plot_proportion_sign(data: pd.DataFrame, fig_folder: str) -> None:
 
 def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     """Generate the plots velocity vs chain length."""
+    runner = RunnerModel(SimpleInteractionModel, 9)
+    model_data = runner.run_serie()
     plt.figure()
     sns.scatterplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC")
     plt.savefig(os.path.join(fig_folder, "scatter_norm.png"))
@@ -152,6 +156,7 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="se", native_scale=True)
+    plt.plot(model_data["n"], model_data["Normalized_vel"], "bs", label="Model")
     plt.legend()
     plt.savefig(os.path.join(fig_folder, "errorbar_norm.png"))
     plt.close()
@@ -164,6 +169,7 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="sd", native_scale=True)
+    plt.plot(model_data["n"], model_data["Normalized_vel"], "bs", label="Model")
     plt.savefig(os.path.join(fig_folder, "errorbar_normsd.png"))
     plt.close()
 
@@ -203,7 +209,8 @@ if __name__ == "__main__":
     data = load_all_data(parent_folder)
 
     data.to_csv(os.path.join(parent_folder, "chain_data.csv"))
-
+    
+    data = data[data["chain_length"] <= 8]
     plot_proportion_sign(data, fig_folder)
     plots_velocity_vs_length(data, fig_folder)
     velocity_histograms(data, fig_folder)
