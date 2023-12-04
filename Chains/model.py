@@ -129,7 +129,7 @@ class Model(ABC):
 
 
 class NaiveModel(Model):
-    def __init__(self, n: int, alpha: float=0) -> None:
+    def __init__(self, n: int, alpha: float) -> None:
         super().__init__(n)
         self.alpha = alpha
         self.A0 = get_A0(n)
@@ -161,6 +161,15 @@ class NaiveModel(Model):
         v = self.calculate_velocity(flagella_rot)
         return - self.Bf * v + self.Df * flagella_rot
 
+class NaiveModelAlpha1(NaiveModel):
+    """Naive model where we consider the full length of the flagella propelling."""
+    def __init__(self, n: int) -> None:
+        super().__init__(n, alpha=1)
+
+class NaiveModelAlpha0(NaiveModel):
+    """Naive model where we consider the only the free part of the flagella propelling."""
+    def __init__(self, n: int) -> None:
+        super().__init__(n, alpha=0)
 
 class SimpleInteractionModel(Model):
     """Simple interaction model where we considerer that the flagella around the body will experience a rotation frequency of w + W.
@@ -317,14 +326,29 @@ class RunnerModel:
 
 
 if __name__=="__main__":
-    runner = RunnerModel(NaiveModel, 8)
-    data = runner.run_serie()
+    runner = RunnerModel(NaiveModelAlpha0, 8)
+    data1 = runner.run_serie()
     runner.plot("/Users/sintes/Desktop/NASGuillaume/Chains/Figures/Models/NaiveAlpha0")
 
+    runner = RunnerModel(NaiveModelAlpha1, 8)
+    data2 = runner.run_serie()
+    runner.plot("/Users/sintes/Desktop/NASGuillaume/Chains/Figures/Models/NaiveAlpha1")
+
     runner = RunnerModel(SimpleInteractionModel, 8)
-    data = runner.run_serie()
+    data3 = runner.run_serie()
     runner.plot("/Users/sintes/Desktop/NASGuillaume/Chains/Figures/Models/Interaction1")
 
     runner = RunnerModel(InteractionModel2, 8)
-    data2 = runner.run_serie()
-    runner.plot("/Users/sintes/Desktop/NASGuillaume/Chains/Figures/Models/Interaction2")    
+    data4 = runner.run_serie()
+    runner.plot("/Users/sintes/Desktop/NASGuillaume/Chains/Figures/Models/Interaction2")
+
+    plt.figure()
+    plt.plot(data1["n"], data1["Normalized_vel"] , "o", label=r"Naive $\alpha=0$")
+    plt.plot(data2["n"], data2["Normalized_vel"] , "o", label=r"Naive  $\alpha=1$")
+    plt.plot(data3["n"], data3["Normalized_vel"] , "o", label="Interaction 1")
+    plt.plot(data4["n"], data4["Normalized_vel"] , "o", label="Interaction 2")
+    plt.ylabel("$V / V_{single}$")
+    plt.xlabel("Chain length")
+    plt.legend()
+    plt.savefig("/Users/sintes/Desktop/NASGuillaume/Chains/Figures/Models/grouped_velocity_plot.png")
+    plt.close()
