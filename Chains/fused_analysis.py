@@ -138,6 +138,18 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     """Generate the plots velocity vs chain length."""
     runner = RunnerModel(SimpleInteractionModel, 9)
     model_data = runner.run_serie()
+
+    plt.figure()
+    sns.pointplot(data=data, x="chain_length", y="velocity", linestyles="", errorbar="se", native_scale=True, c="k")
+    plt.savefig(os.path.join(fig_folder,"errorbar_raw_All.png"))
+    plt.close()
+
+    plt.figure()
+    sns.pointplot(data=data, x="chain_length", y="Normalized_vel", linestyles="", errorbar="se", native_scale=True, c="k")
+    plt.plot(model_data["n"], model_data["Normalized_vel"], "bs", label="Model")
+    plt.savefig(os.path.join(fig_folder,"errorbar_norm_All.png"))
+    plt.close()
+
     plt.figure()
     sns.scatterplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC")
     plt.savefig(os.path.join(fig_folder, "scatter_norm.png"))

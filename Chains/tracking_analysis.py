@@ -188,7 +188,7 @@ def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
 
 
 if __name__ == "__main__":
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 13.68%"
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 13.7%"
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
     for folder in folder_list:
