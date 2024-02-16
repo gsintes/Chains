@@ -73,6 +73,7 @@ def velocity_histograms(data: pd.DataFrame, fig_folder: str) -> None:
     plt.figure()
     sns.boxplot(data, y="velocity", hue="Concentration_LC")
     plt.savefig(os.path.join(hist_folder, "box_plot.png"))
+    plt.close()
 
     for c in concentrations:
         try:
@@ -109,12 +110,14 @@ def size_distribution(data: pd.DataFrame, fig_folder: str) -> None:
     sns.histplot(data, x="chain_length", hue="Concentration_LC", multiple="dodge", discrete=True, shrink=0.8)
     plt.xlabel("Chain length")
     plt.savefig(os.path.join(fig_folder, "chain_length_dist_nb.png")) 
+    plt.close()
 
     plt.figure()
     sns.histplot(data, x="chain_length", hue="Concentration_LC",
                  multiple="dodge", discrete=True, stat="density", common_norm=False, shrink=0.8)
     plt.xlabel("Chain length")
     plt.savefig(os.path.join(fig_folder, "chain_length_dist_norm.png")) 
+    plt.close()
 
 def plot_proportion_sign(data: pd.DataFrame, fig_folder: str) -> None:
     """Plot the proportion of bacteria swimming in one direction."""
@@ -128,11 +131,13 @@ def plot_proportion_sign(data: pd.DataFrame, fig_folder: str) -> None:
     plt.plot(np.ones(len(props)), props, "k.")
     plt.ylabel("Proportion per direction")
     plt.savefig(os.path.join(fig_folder, "signprop_points.png"))
-
+    plt.close()
+    
     plt.figure()
     sns.boxplot(props)
     plt.ylabel("Proportion per direction")
     plt.savefig(os.path.join(fig_folder, "signprop_box.png"))
+    plt.close()
 
 def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     """Generate the plots velocity vs chain length."""
@@ -145,43 +150,47 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     plt.close()
 
     plt.figure()
-    sns.pointplot(data=data, x="chain_length", y="Normalized_vel", linestyles="", errorbar="se", native_scale=True, c="k")
+    sns.pointplot(data=data, x="chain_length", y="Normalized_vel", linestyles="", errorbar="se", native_scale=True, c="k", label="Experiments")
     plt.plot(model_data["n"], model_data["Normalized_vel"], "bs", label="Model")
+    plt.legend()
     plt.savefig(os.path.join(fig_folder,"errorbar_norm_All.png"))
     plt.close()
 
     plt.figure()
     sns.scatterplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC")
+    plt.legend(title="Concentration_LC")
     plt.savefig(os.path.join(fig_folder, "scatter_norm.png"))
     plt.close()
 
     plt.figure()
     sns.scatterplot(data=data, x="chain_length", y="velocity", hue="Concentration_LC")
+    plt.legend(title="Concentration_LC")
     plt.savefig(os.path.join(fig_folder,"scatter_raw.png"))
     plt.close()
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="velocity", hue="Concentration_LC", linestyles="", errorbar="se", native_scale=True)
-    plt.legend()
+    plt.legend(title="Concentration_LC")
     plt.savefig(os.path.join(fig_folder,"errorbar_raw.png"))
     plt.close()
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="se", native_scale=True)
     plt.plot(model_data["n"], model_data["Normalized_vel"], "bs", label="Model")
-    plt.legend()
+    plt.legend(title="Concentration_LC")
     plt.savefig(os.path.join(fig_folder, "errorbar_norm.png"))
     plt.close()
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="velocity", hue="Concentration_LC", linestyles="", errorbar="sd", native_scale=True)
-    plt.legend()
+    plt.legend(title="Concentration_LC")
     plt.savefig(os.path.join(fig_folder,"errorbar_rawsd.png"))
     plt.close()
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="sd", native_scale=True)
     plt.plot(model_data["n"], model_data["Normalized_vel"], "bs", label="Model")
+    plt.legend(title="Concentration_LC")
     plt.savefig(os.path.join(fig_folder, "errorbar_normsd.png"))
     plt.close()
 
@@ -228,3 +237,8 @@ if __name__ == "__main__":
     velocity_histograms(data, fig_folder)
     size_distribution(data, fig_folder)
     plot_vel_by_exp(data, fig_folder)
+
+    data1 = data[data.chain_length==1]
+    data.hist(column="velocity", bins=50)
+    print(data1.velocity.mean(), data1.velocity.std(), data1.velocity.std()/ data1.velocity.mean())
+    plt.show(block=True)
