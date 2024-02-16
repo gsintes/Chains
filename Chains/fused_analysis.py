@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from model import SimpleInteractionModel, RunnerModel
-
+from runSimulation import get_simu_data   
 
 def get_concentration(concentration_folder: str) -> float:
     """Get the concentration from the folder name."""
@@ -139,25 +139,30 @@ def plot_proportion_sign(data: pd.DataFrame, fig_folder: str) -> None:
     plt.savefig(os.path.join(fig_folder, "signprop_box.png"))
     plt.close()
 
+
 def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     """Generate the plots velocity vs chain length."""
     runner = RunnerModel(SimpleInteractionModel, 9)
     model_data = runner.run_serie()
+    simu, simu_norm = get_simu_data(data)
 
     plt.figure()
-    sns.pointplot(data=data, x="chain_length", y="velocity", linestyles="", errorbar="se", native_scale=True, c="k")
+    sns.pointplot(data=data, x="chain_length", y="velocity", linestyles="", errorbar="se", native_scale=True, c="k", label="Experiments")
+    sns.pointplot(data=simu.data, x="length", y="max_vel", linestyles="", errorbar="se", native_scale=True, label="Simulation")
+    plt.legend()
     plt.savefig(os.path.join(fig_folder,"errorbar_raw_All.png"))
     plt.close()
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="Normalized_vel", linestyles="", errorbar="se", native_scale=True, c="k", label="Experiments")
-    plt.plot(model_data["n"], model_data["Normalized_vel"], "bs", label="Model")
+    sns.pointplot(data=simu_norm.data, x="length", y="max_vel", linestyles="", errorbar="se", native_scale=True, label="Simulation")
     plt.legend()
     plt.savefig(os.path.join(fig_folder,"errorbar_norm_All.png"))
     plt.close()
 
     plt.figure()
     sns.scatterplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC")
+    sns.scatterplot(data=simu_norm.data, x="length", y="max_vel", label="Simulation")
     plt.legend(title="Concentration_LC")
     plt.savefig(os.path.join(fig_folder, "scatter_norm.png"))
     plt.close()
@@ -170,26 +175,28 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="velocity", hue="Concentration_LC", linestyles="", errorbar="se", native_scale=True)
+    sns.pointplot(data=simu.data, x="length", y="max_vel", linestyles="", errorbar="se", native_scale=True, label="Simulation")
     plt.legend(title="Concentration_LC")
     plt.savefig(os.path.join(fig_folder,"errorbar_raw.png"))
     plt.close()
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="se", native_scale=True)
-    plt.plot(model_data["n"], model_data["Normalized_vel"], "bs", label="Model")
+    sns.pointplot(data=simu_norm.data, x="length", y="max_vel", linestyles="", errorbar="se", native_scale=True, label="Simulation")
     plt.legend(title="Concentration_LC")
     plt.savefig(os.path.join(fig_folder, "errorbar_norm.png"))
     plt.close()
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="velocity", hue="Concentration_LC", linestyles="", errorbar="sd", native_scale=True)
+    sns.pointplot(data=simu.data, x="length", y="max_vel", linestyles="", errorbar="sd", native_scale=True, label="Simulation")
     plt.legend(title="Concentration_LC")
     plt.savefig(os.path.join(fig_folder,"errorbar_rawsd.png"))
     plt.close()
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="sd", native_scale=True)
-    plt.plot(model_data["n"], model_data["Normalized_vel"], "bs", label="Model")
+    sns.pointplot(data=simu_norm.data, x="length", y="max_vel", linestyles="", errorbar="sd", native_scale=True, label="Simulation")
     plt.legend(title="Concentration_LC")
     plt.savefig(os.path.join(fig_folder, "errorbar_normsd.png"))
     plt.close()
@@ -224,6 +231,11 @@ def sampling(data: pd.DataFrame, nb: int = 10) -> List[Tuple[str, int, int]]:
             res.append((chain[1]["Exp"], chain[1]["id"], l))
     return res
 
+def std_plot(data: pd.DataFrame, fig_folder: str):
+    """Plot the standard deviation as a function of length."""
+    simu, simu_norm = get_simu_data(data)
+
+
 if __name__ == "__main__":
     parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains"
     fig_folder = os.path.join(parent_folder, "Figures")
@@ -238,7 +250,4 @@ if __name__ == "__main__":
     size_distribution(data, fig_folder)
     plot_vel_by_exp(data, fig_folder)
 
-    data1 = data[data.chain_length==1]
-    data.hist(column="velocity", bins=50)
-    print(data1.velocity.mean(), data1.velocity.std(), data1.velocity.std()/ data1.velocity.mean())
-    plt.show(block=True)
+    
