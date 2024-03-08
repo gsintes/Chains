@@ -22,7 +22,7 @@ class Simulation:
     def __init__(self, mean: float, std: float) -> None:
         self.mean = mean
         self.std = std
-        self.length: List[int] = []
+        self.lengths: List[int] = []
         self.max_vels: List[float] = []
 
     def generate_chains(self, max_chain_length: int, nb_chain_by_length: int) -> None:
@@ -30,10 +30,10 @@ class Simulation:
         for n in range(1, max_chain_length + 1):
             for _ in range(nb_chain_by_length):
                 chain = Chain(n, self.mean, self.std)
-                self.length.append(n)
+                self.lengths.append(n)
                 self.max_vels.append(chain.max_vel)
         data = pd.DataFrame({
-            "length": self.length,
+            "length": self.lengths,
             "max_vel": self.max_vels,
         })
         self.data = data

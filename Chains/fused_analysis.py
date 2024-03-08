@@ -69,6 +69,7 @@ def velocity_histograms(data: pd.DataFrame, fig_folder: str) -> None:
     sns.histplot(data, x="velocity", hue="Concentration_LC", stat="density", common_norm=False)
     plt.title("Velocities")
     plt.savefig(os.path.join(hist_folder, "hist_general.png"))
+    plt.close()
 
     plt.figure()
     sns.boxplot(data, y="velocity", hue="Concentration_LC")
@@ -142,8 +143,8 @@ def plot_proportion_sign(data: pd.DataFrame, fig_folder: str) -> None:
 
 def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     """Generate the plots velocity vs chain length."""
-    runner = RunnerModel(SimpleInteractionModel, 9)
-    model_data = runner.run_serie()
+    # runner = RunnerModel(SimpleInteractionModel, 9)
+    # model_data = runner.run_serie()
     simu, simu_norm = get_simu_data(data)
 
     plt.figure()
@@ -231,10 +232,39 @@ def sampling(data: pd.DataFrame, nb: int = 10) -> List[Tuple[str, int, int]]:
             res.append((chain[1]["Exp"], chain[1]["id"], l))
     return res
 
-def std_plot(data: pd.DataFrame, fig_folder: str):
+def std_plot(data: pd.DataFrame, fig_folder: str) -> None:
     """Plot the standard deviation as a function of length."""
-    simu, simu_norm = get_simu_data(data)
+    simu, _ = get_simu_data(data)
 
+    lengths_simu = simu.data.length.unique()
+    stds_simu = []
+    for l in lengths_simu:
+        sub_data = simu.data[simu.data.length==l]
+        stds_simu.append(sub_data.max_vel.std())
+
+    lengths_exp = data.chain_length.unique()
+    stds_exp = []
+    for l in lengths_exp:
+        sub_data = data[data.chain_length==l]
+        stds_exp.append(sub_data.velocity.std())
+
+
+    plt.figure()
+    plt.plot(lengths_exp, stds_exp, "s", label="Experiment")
+    plt.plot(lengths_simu, stds_simu, "o", label="Simulation")
+    plt.xlabel("Chain length")
+    plt.ylabel("Standard deviation")
+    plt.legend()
+    plt.savefig(os.path.join(fig_folder, "Std.png"))
+    plt.close()
+
+def sample_size_plot(data: pd.DataFrame, fig_folder: str) -> None:
+    """Plot the sample size as a function of the chain length."""
+    count = data.chain_length.value_counts()
+    plt.figure()
+    plt.plot(count, "o")
+    plt.yscale("log")
+    plt.show(block=True)
 
 if __name__ == "__main__":
     parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains"
@@ -249,5 +279,6 @@ if __name__ == "__main__":
     velocity_histograms(data, fig_folder)
     size_distribution(data, fig_folder)
     plot_vel_by_exp(data, fig_folder)
-
+    std_plot(data, fig_folder)
+    sample_size_plot(data, fig_folder)
     
