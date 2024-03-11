@@ -140,7 +140,6 @@ def plot_proportion_sign(data: pd.DataFrame, fig_folder: str) -> None:
     plt.savefig(os.path.join(fig_folder, "signprop_box.png"))
     plt.close()
 
-
 def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     """Generate the plots velocity vs chain length."""
     # runner = RunnerModel(SimpleInteractionModel, 9)
@@ -158,7 +157,10 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     sns.pointplot(data=data, x="chain_length", y="Normalized_vel", linestyles="", errorbar="se", native_scale=True, c="k", label="Experiments")
     sns.pointplot(data=simu_norm.data, x="length", y="max_vel", linestyles="", errorbar="se", native_scale=True, label="Simulation")
     plt.legend()
+    plt.xlabel("Chain length")
+    plt.ylabel("$V / V_1$")
     plt.savefig(os.path.join(fig_folder,"errorbar_norm_All.png"))
+    
     plt.close()
 
     plt.figure()
@@ -264,7 +266,7 @@ def sample_size_plot(data: pd.DataFrame, fig_folder: str) -> None:
     plt.figure()
     plt.plot(count, "o")
     plt.yscale("log")
-    plt.show(block=True)
+    # plt.show(block=True)
 
 if __name__ == "__main__":
     parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains"
