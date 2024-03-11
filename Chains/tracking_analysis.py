@@ -98,7 +98,7 @@ class Analysis():
         for id in ids:
             sub_data: pd.DataFrame = self.data.loc[self.data["id"]==id]
             plt.plot(sub_data["xBody"], 1024 - sub_data["yBody"], ".", markersize=1)
-        plt.plot(x, 1024 - y, "k--")
+        plt.plot(x, y, "k--")
         plt.savefig(os.path.join(self.path, "Figure/trace.png"))
         plt.close()
 
@@ -188,7 +188,7 @@ def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
 
 
 if __name__ == "__main__":
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 13.7%"
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 12%"
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
     for folder in folder_list:
