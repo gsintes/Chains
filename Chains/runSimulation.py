@@ -13,9 +13,16 @@ class ChainGenerator:
     def __init__(self) -> None:
         raise NotImplementedError
     
+    def sample_vel(self) -> float:
+        """Sample a bacteria speed"""
+        raise NotImplementedError
+    
     def generate(self, n: int) -> float:
         """Generate a chain of length n"""
-        raise NotImplementedError
+        vel_bacteria: np.ndarray[float] = np.zeros(n)
+        for i in range(n):
+            vel_bacteria[i] = self.sample_vel()
+        return max(vel_bacteria)
 
 class GaussianChainGenerator(ChainGenerator):
     def __init__(self, mean: float, std: float) -> None:
@@ -23,12 +30,28 @@ class GaussianChainGenerator(ChainGenerator):
         self.mean = mean
         self.std = std
 
-    def generate(self, n: int) -> float:
-        """Generate a chain of length n"""
-        vel_bacteria: np.ndarray[float] = np.zeros(n)
-        for i in range(n):
-            vel_bacteria[i] = normal(self.mean, self.std)
-        return max(vel_bacteria)
+    def sample_vel(self) -> float:
+        return normal(self.mean, self.std)
+    
+class DataChainGenerator(ChainGenerator):
+    def __init__(self, data: pd.DataFrame, norm: bool) -> None:
+        """Chain generator where the swimming speed follows the experimental distribution."""
+        data1 = data[data.chain_length==1]
+        if norm:
+            vel = data1.Normalized_vel.dropna()
+        else:
+            vel = data1.velocity.dropna()
+        self.vel = np.array(vel)
+        self.vel.sort()
+        self.sample_size = len(self.vel)
+
+
+    def sample_vel(self) -> float:
+        x = np.random.uniform(0, self.sample_size - 1)
+        i = int(np.floor(x))
+        p = x - i
+        vel = (1 - p) * self.vel[i] + p * self.vel[i + 1]
+        return vel
 
 class Simulation:
     def __init__(self, chain_generator: ChainGenerator) -> None:
@@ -53,16 +76,19 @@ class Simulation:
         """Save the data into a dataframe""" 
         self.data.to_csv(os.path.join(folder, file))
 
-def get_simu_data(data: pd.DataFrame, max_length: int = 8, nb_chains: int = 1000) -> Tuple[Simulation, Simulation]:
+def get_simu_data(data: pd.DataFrame, from_data: bool = False, max_length: int = 8, nb_chains: int = 1000) -> Tuple[Simulation, Simulation]:
     """Run the simulation based on the data mean and std.
     Return the simulation data and the simulation, normalized."""
     data1 = data[data.chain_length==1]
-    
-    mean = data1.velocity.mean()
-    std = data1.velocity.std()
-
-    simu = Simulation(GaussianChainGenerator(mean, std))
-    simu_norm = Simulation(GaussianChainGenerator(1, std / mean))
+    vel = data1.velocity.dropna()
+    mean = vel.mean()
+    std = vel.std()
+    if from_data:
+        simu = Simulation(DataChainGenerator(data, norm=False))
+        simu_norm = Simulation(DataChainGenerator(data, norm=True))
+    else:
+        simu = Simulation(GaussianChainGenerator(mean, std))
+        simu_norm = Simulation(GaussianChainGenerator(1, std / mean))
     simu.generate_chains(max_length, nb_chains)
     simu_norm.generate_chains(max_length, nb_chains)   
     return simu, simu_norm
