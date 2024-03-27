@@ -144,21 +144,18 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     """Generate the plots velocity vs chain length."""
     # runner = RunnerModel(SimpleInteractionModel, 9)
     # model_data = runner.run_serie()
-    simu_gauss, simu_norm_gauss = get_simu_data(data, from_data=False)
     simu_data, simu_norm_data = get_simu_data(data, from_data=True)
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="velocity", linestyles="", errorbar="se", native_scale=True, c="k", label="Experiments")
-    sns.pointplot(data=simu_gauss.data, x="length", y="max_vel", linestyles="", errorbar="se", native_scale=True, label="Simulation gaussian")
-    sns.pointplot(data=simu_data.data, x="length", y="max_vel", linestyles="", errorbar="se", native_scale=True, label="Simulation data")
+    sns.pointplot(data=simu_data.data, x="length", y="max_vel", linestyles="", errorbar="se", native_scale=True, label="Simulation")
     plt.legend()
     plt.savefig(os.path.join(fig_folder,"errorbar_raw_All.png"))
     plt.close()
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="Normalized_vel", linestyles="", errorbar="se", native_scale=True, c="k", label="Experiments")
-    sns.pointplot(data=simu_norm_gauss.data, x="length", y="max_vel", linestyles="", errorbar="se", native_scale=True, label="Simulation gaussian")
-    sns.pointplot(data=simu_norm_data.data, x="length", y="max_vel", linestyles="", errorbar="se", native_scale=True, label="Simulation data")
+    sns.pointplot(data=simu_norm_data.data, x="length", y="max_vel", linestyles="", errorbar="se", native_scale=True, label="Simulation")
     plt.legend()
     plt.xlabel("Chain length")
     plt.ylabel("$V / V_1$")
@@ -168,8 +165,7 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
 
     plt.figure()
     sns.scatterplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC")
-    sns.scatterplot(data=simu_norm_gauss.data, x="length", y="max_vel", label="Simulation gaussian")
-    sns.scatterplot(data=simu_norm_data.data, x="length", y="max_vel", label="Simulation data")
+    sns.scatterplot(data=simu_norm_data.data, x="length", y="max_vel", label="Simulation")
     plt.legend(title="Concentration_LC")
     plt.savefig(os.path.join(fig_folder, "scatter_norm.png"))
     plt.close()
@@ -182,28 +178,24 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="velocity", hue="Concentration_LC", linestyles="", errorbar="se", native_scale=True)
-    sns.pointplot(data=simu_gauss.data, x="length", y="max_vel", linestyles="", errorbar="se", native_scale=True, label="Simulation gaussian")
     plt.legend(title="Concentration_LC")
     plt.savefig(os.path.join(fig_folder,"errorbar_raw.png"))
     plt.close()
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="se", native_scale=True)
-    sns.pointplot(data=simu_norm_gauss.data, x="length", y="max_vel", linestyles="", errorbar="se", native_scale=True, label="Simulation gaussian")
     plt.legend(title="Concentration_LC")
     plt.savefig(os.path.join(fig_folder, "errorbar_norm.png"))
     plt.close()
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="velocity", hue="Concentration_LC", linestyles="", errorbar="sd", native_scale=True)
-    sns.pointplot(data=simu_gauss.data, x="length", y="max_vel", linestyles="", errorbar="sd", native_scale=True, label="Simulation Gaussian")
     plt.legend(title="Concentration_LC")
     plt.savefig(os.path.join(fig_folder,"errorbar_rawsd.png"))
     plt.close()
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC", linestyles="", errorbar="sd", native_scale=True)
-    sns.pointplot(data=simu_norm_gauss.data, x="length", y="max_vel", linestyles="", errorbar="sd", native_scale=True, label="Simulation Gaussian")
     plt.legend(title="Concentration_LC")
     plt.savefig(os.path.join(fig_folder, "errorbar_normsd.png"))
     plt.close()
@@ -240,15 +232,11 @@ def sampling(data: pd.DataFrame, nb: int = 10) -> List[Tuple[str, int, int]]:
 
 def std_plot(data: pd.DataFrame, fig_folder: str) -> None:
     """Plot the standard deviation as a function of length."""
-    simu_gauss, _ = get_simu_data(data, from_data=False)
     simu_data, _ = get_simu_data(data, from_data=True)
-    lengths_simu = simu_gauss.data.length.unique()
-    stds_simu_gauss = []
+    lengths_simu = simu_data.data.length.unique()
     stds_simu_data = []
     for l in lengths_simu:
-        sub_data = simu_gauss.data[simu_gauss.data.length==l]
-        stds_simu_gauss.append(sub_data.max_vel.std())
-        sub_data = simu_data.data[simu_gauss.data.length==l]
+        sub_data = simu_data.data[simu_data.data.length==l]
         stds_simu_data.append(sub_data.max_vel.std())
 
     lengths_exp = data.chain_length.unique()
@@ -260,7 +248,6 @@ def std_plot(data: pd.DataFrame, fig_folder: str) -> None:
 
     plt.figure()
     plt.plot(lengths_exp, stds_exp, "s", label="Experiment")
-    plt.plot(lengths_simu, stds_simu_gauss, "o", label="Simulation gaussian")
     plt.plot(lengths_simu, stds_simu_data, "o", label="Simulation data")
     plt.xlabel("Chain length")
     plt.ylabel("Standard deviation")

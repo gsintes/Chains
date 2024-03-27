@@ -76,7 +76,7 @@ def main(folder_path: str) -> str:
     return f"{exp_name} done at {datetime.now()}\n"
 
 if __name__=="__main__":
-    parent_folder = "/media/guillaume/Chains/Chains/Chains 13.68%"
+    parent_folder = "/Volumes/Chains/PassiveAgregation/"
     log_file = os.path.join(parent_folder, "log.txt")
     try:
         os.remove(log_file)

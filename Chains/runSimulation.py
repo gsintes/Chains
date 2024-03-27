@@ -8,6 +8,7 @@ from numpy.random import normal
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from scipy.stats import lognorm
 
 class ChainGenerator:
     def __init__(self) -> None:
@@ -53,6 +54,15 @@ class DataChainGenerator(ChainGenerator):
         vel = (1 - p) * self.vel[i] + p * self.vel[i + 1]
         return vel
 
+class LogNormalChainGenerator(ChainGenerator):
+    """Chain generator where the velocity follows a lognormal distribution"""
+    def __init__(self, log_mean: float, log_std: float) -> None:
+        self.scale = np.exp(log_mean)
+        self.s = log_std
+
+    def sample_vel(self) -> float:
+        return lognorm.rvs(s=self.s, scale=self.scale)
+    
 class Simulation:
     def __init__(self, chain_generator: ChainGenerator) -> None:
         self.chain_generator = chain_generator
@@ -76,7 +86,7 @@ class Simulation:
         """Save the data into a dataframe""" 
         self.data.to_csv(os.path.join(folder, file))
 
-def get_simu_data(data: pd.DataFrame, from_data: bool = False, max_length: int = 8, nb_chains: int = 1000) -> Tuple[Simulation, Simulation]:
+def get_simu_data(data: pd.DataFrame, from_data: bool = False, max_length: int = 8, nb_chains: int = 10000) -> Tuple[Simulation, Simulation]:
     """Run the simulation based on the data mean and std.
     Return the simulation data and the simulation, normalized."""
     data1 = data[data.chain_length==1]
@@ -96,7 +106,7 @@ def get_simu_data(data: pd.DataFrame, from_data: bool = False, max_length: int =
 if __name__=="__main__":
     stds = [0.5, 0.68, 1]
     for sd in stds:
-        simu = Simulation(GaussianChainGenerator(1, sd))
+        simu = Simulation(LogNormalChainGenerator(1, 1))
         simu.generate_chains(10, 10000)
 
         sns.pointplot(data=simu.data, x="length", y="max_vel", linestyles="", errorbar="sd", native_scale=True, label=sd)
