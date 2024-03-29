@@ -7,7 +7,6 @@ from typing import List, Tuple, Any
 import numpy as np
 import pandas as pd
 
-from tracking_analysis import Analysis
 
 class DistanceCalculator:
     """Object to calculate distance between pairs of bacteria over time."""
@@ -51,16 +50,13 @@ class DistanceCalculator:
         for id in ids:
             length: float = self.bactLength * self.data.loc[self.data["id"] == id, "Velocity"].mean() 
             vel: float = self.scale * self.data.loc[self.data["id"] == id, "Velocity"].mean() / self.frameRate #pix/frame
-            print(id, length, vel)
             if vel < 0.2:
                 self.data: pd.DataFrame = self.data.drop(self.data[self.data["id"] == id].index)
             else:
                 thresh = length / vel
-                print(thresh)
                 len_track = len(self.data.loc[self.data["id"] == id])
                 if len_track < thresh:
                     self.data = self.data.drop(self.data[self.data["id"] == id].index)
-
     
     def distance_bacteria(self) -> None:
         """Calculate the distance for all pairs of bacteria"""
@@ -101,4 +97,4 @@ if __name__=="__main__":
     folder = "/Users/sintes/Desktop/TestDistance"
     calculator = DistanceCalculator(folder)
     calculator.distance_bacteria()
-    print(calculator.pair_distances.i.unique())
+    # print(calculator.pair_distances.i.unique())
