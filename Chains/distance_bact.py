@@ -17,6 +17,8 @@ class DistanceCalculator:
         self.scale = 6.24
         self.path = path
         self.data = self.load_data()
+        self.calculate_velocity()
+        self.clean()
 
     def load_data(self) -> pd.DataFrame:
         """Load the data from the database."""
@@ -27,6 +29,38 @@ class DistanceCalculator:
         df = df[['xBody', 'yBody', 'tBody', 'bodyMajorAxisLength', 'bodyMinorAxisLength', 'imageNumber', 'id']]
         df["time"] = df["imageNumber"] / self.frameRate 
         return df
+    
+    def calculate_velocity(self) -> None:
+        """Calculate velocities."""
+        ids = self.data["id"].unique()
+        ids.sort()
+        for id in ids:
+            data = self.data.loc[self.data["id"] == id]
+            coord = ["xBody", "yBody"]
+            for ax in coord:
+                pos_diff = data[ax].diff() / self.scale
+                time_diff = data["time"].diff()
+                
+                velocity = pos_diff / time_diff
+                self.data.loc[velocity.index, ax[0] + "Vel"] = velocity
+        self.data["Velocity"] = np.sqrt(self.data["xVel"] ** 2 + self.data["yVel"] ** 2)
+    
+    def clean(self) -> None:
+        """Clean the data by removing to short tracks."""
+        ids = self.data["id"].unique()
+        for id in ids:
+            length: float = self.bactLength * self.data.loc[self.data["id"] == id, "Velocity"].mean() 
+            vel: float = self.scale * self.data.loc[self.data["id"] == id, "Velocity"].mean() / self.frameRate #pix/frame
+            print(id, length, vel)
+            if vel < 0.2:
+                self.data: pd.DataFrame = self.data.drop(self.data[self.data["id"] == id].index)
+            else:
+                thresh = length / vel
+                print(thresh)
+                len_track = len(self.data.loc[self.data["id"] == id])
+                if len_track < thresh:
+                    self.data = self.data.drop(self.data[self.data["id"] == id].index)
+
     
     def distance_bacteria(self) -> None:
         """Calculate the distance for all pairs of bacteria"""
@@ -43,6 +77,7 @@ class DistanceCalculator:
                 df["i"] = i
                 df["j"] = j
                 self.pair_distances = pd.concat((self.pair_distances, df))
+        self.pair_distances.to_csv(os.path.join(self.path, "Tracking_Result/distances.csv"))
 
     def distance_pair(self, i: int, j: int) -> List[Tuple[int, float]]:
         """Calculate the distance for all times """
@@ -66,3 +101,4 @@ if __name__=="__main__":
     folder = "/Users/sintes/Desktop/TestDistance"
     calculator = DistanceCalculator(folder)
     calculator.distance_bacteria()
+    print(calculator.pair_distances.i.unique())

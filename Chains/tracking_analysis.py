@@ -30,7 +30,7 @@ class Analysis():
         return df
 
     def calculate_velocity(self) -> None:
-        """Reindex the objects when big jumps."""
+        """Calculate velocities."""
         ids = self.data["id"].unique()
         ids.sort()
         for id in ids:
