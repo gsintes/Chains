@@ -28,8 +28,6 @@ class DistanceCalculator:
         self.data = load_data(path, self.frame_rate)
         self.calculate_velocity()
         self.clean()
-
-    
     
     def calculate_velocity(self) -> None:
         """Calculate velocities."""
@@ -102,16 +100,18 @@ class DistanceAnalyser:
         self.path = path
         distance = pd.read_csv(os.path.join(self.path, "Tracking_Result/distances.csv"))
         self.distance = distance[distance["i"]==i]
-        self.distance = distance[distance["j"]==j]
-        
+        self.distance = self.distance[self.distance["j"]==j]
         self.tracking = load_data(self.path, 30)
         self.i = i
         self.j = j
+        assert len(self.distance.i.unique()) == 1
+        assert len(self.distance.j.unique()) == 1
 
     def plot_distance(self):
         """Plot the distance as a function of time"""
         plt.figure()
         plt.plot(self.distance["im"], self.distance["distance"], ".")
+        plt.ylim(bottom=0)
         plt.xlabel("Image")
         plt.ylabel("Distance (pixel)")
         plt.title(f"Pair: ({self.i}, {self.j})")
