@@ -5,29 +5,31 @@ import sqlite3
 from typing import List, Tuple, Any
 
 import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
 
+def load_data(path: str, frame_rate: int) -> pd.DataFrame:
+        """Load the data from the database."""
+        dbfile = os.path.join(path, "Tracking_Result/tracking.db")
+        con = sqlite3.connect(dbfile)
+        df = pd.read_sql_query('SELECT * FROM tracking', con)
+        con.close()
+        df = df[['xBody', 'yBody', 'tBody', 'bodyMajorAxisLength', 'bodyMinorAxisLength', 'imageNumber', 'id']]
+        df["time"] = df["imageNumber"] / frame_rate 
+        return df
 
 class DistanceCalculator:
     """Object to calculate distance between pairs of bacteria over time."""
     def __init__(self, path: str) -> None:
         self.bactLength = 10
-        self.frameRate = 30
+        self.frame_rate = 30
         self.scale = 6.24
         self.path = path
-        self.data = self.load_data()
+        self.data = load_data(path, self.frame_rate)
         self.calculate_velocity()
         self.clean()
 
-    def load_data(self) -> pd.DataFrame:
-        """Load the data from the database."""
-        dbfile = os.path.join(self.path, "Tracking_Result/tracking.db")
-        con = sqlite3.connect(dbfile)
-        df = pd.read_sql_query('SELECT * FROM tracking', con)
-        con.close()
-        df = df[['xBody', 'yBody', 'tBody', 'bodyMajorAxisLength', 'bodyMinorAxisLength', 'imageNumber', 'id']]
-        df["time"] = df["imageNumber"] / self.frameRate 
-        return df
+    
     
     def calculate_velocity(self) -> None:
         """Calculate velocities."""
@@ -49,7 +51,7 @@ class DistanceCalculator:
         ids = self.data["id"].unique()
         for id in ids:
             length: float = self.bactLength * self.data.loc[self.data["id"] == id, "Velocity"].mean() 
-            vel: float = self.scale * self.data.loc[self.data["id"] == id, "Velocity"].mean() / self.frameRate #pix/frame
+            vel: float = self.scale * self.data.loc[self.data["id"] == id, "Velocity"].mean() / self.frame_rate #pix/frame
             if vel < 0.2:
                 self.data: pd.DataFrame = self.data.drop(self.data[self.data["id"] == id].index)
             else:
@@ -73,6 +75,7 @@ class DistanceCalculator:
                 df["i"] = i
                 df["j"] = j
                 self.pair_distances = pd.concat((self.pair_distances, df))
+        self.pair_distances.dropna(inplace=True)
         self.pair_distances.to_csv(os.path.join(self.path, "Tracking_Result/distances.csv"))
 
     def distance_pair(self, i: int, j: int) -> List[Tuple[int, float]]:
@@ -93,8 +96,30 @@ class DistanceCalculator:
                 raise ValueError()   
         return res
 
+class DistanceAnalyser:
+    """Analyse the distance between to objects"""
+    def __init__(self, path: str, i: int, j: int) -> None:
+        self.path = path
+        distance = pd.read_csv(os.path.join(self.path, "Tracking_Result/distances.csv"))
+        print(distance)
+        self.distance = distance[distance["i"]==i]
+        self.distance = distance[distance["j"]==j]
+        print(self.distance)
+        
+        self.tracking = load_data(self.path, 30)
+        self.i = i
+        self.j = j
+
+    def plot_distance(self):
+        """Plot the distance as a function of time"""
+        plt.figure()
+        plt.plot(self.distance["im"], self.distance["distance"], ".")
+        plt.title(f"Pair: ({self.i}, {self.j})")
+        plt.show(block=True)
+
 if __name__=="__main__":
     folder = "/Users/sintes/Desktop/TestDistance"
-    calculator = DistanceCalculator(folder)
-    calculator.distance_bacteria()
-    # print(calculator.pair_distances.i.unique())
+    # calculator = DistanceCalculator(folder)
+    # calculator.distance_bacteria()
+    ana = DistanceAnalyser(folder, 2, 3)
+    ana.plot_distance()
