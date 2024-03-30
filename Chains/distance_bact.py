@@ -76,7 +76,7 @@ class DistanceCalculator:
                 df["j"] = j
                 self.pair_distances = pd.concat((self.pair_distances, df))
         self.pair_distances.dropna(inplace=True)
-        self.pair_distances.to_csv(os.path.join(self.path, "Tracking_Result/distances.csv"))
+        self.pair_distances.to_csv(os.path.join(self.path, "Tracking_Result/distances.csv"), index=False)
 
     def distance_pair(self, i: int, j: int) -> List[Tuple[int, float]]:
         """Calculate the distance for all times """
@@ -101,10 +101,8 @@ class DistanceAnalyser:
     def __init__(self, path: str, i: int, j: int) -> None:
         self.path = path
         distance = pd.read_csv(os.path.join(self.path, "Tracking_Result/distances.csv"))
-        print(distance)
         self.distance = distance[distance["i"]==i]
         self.distance = distance[distance["j"]==j]
-        print(self.distance)
         
         self.tracking = load_data(self.path, 30)
         self.i = i
@@ -117,11 +115,14 @@ class DistanceAnalyser:
         plt.xlabel("Image")
         plt.ylabel("Distance (pixel)")
         plt.title(f"Pair: ({self.i}, {self.j})")
-        plt.show(block=True)
+        plt.savefig(os.path.join(self.path, f"Figures/Distance/{self.i}-{self.j}.png"))
+        plt.close()
 
 if __name__=="__main__":
     folder = "/Users/sintes/Desktop/TestDistance"
-    # calculator = DistanceCalculator(folder)
-    # calculator.distance_bacteria()
-    ana = DistanceAnalyser(folder, 2, 4)
-    ana.plot_distance()
+    calculator = DistanceCalculator(folder)
+    calculator.distance_bacteria()
+    pairs = calculator.pair_distances.groupby(['i','j']).count().reset_index()[["i", "j"]]
+    for pair in pairs.iterrows():
+        ana = DistanceAnalyser(folder, pair[1].i, pair[1].j)
+        ana.plot_distance()
