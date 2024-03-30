@@ -114,6 +114,8 @@ class DistanceAnalyser:
         """Plot the distance as a function of time"""
         plt.figure()
         plt.plot(self.distance["im"], self.distance["distance"], ".")
+        plt.xlabel("Image")
+        plt.ylabel("Distance (pixel)")
         plt.title(f"Pair: ({self.i}, {self.j})")
         plt.show(block=True)
 
@@ -121,5 +123,5 @@ if __name__=="__main__":
     folder = "/Users/sintes/Desktop/TestDistance"
     # calculator = DistanceCalculator(folder)
     # calculator.distance_bacteria()
-    ana = DistanceAnalyser(folder, 2, 3)
+    ana = DistanceAnalyser(folder, 2, 4)
     ana.plot_distance()
