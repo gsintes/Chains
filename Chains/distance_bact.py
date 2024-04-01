@@ -128,12 +128,39 @@ class DistanceAnalyser:
         plt.close()
 
 if __name__=="__main__":
-    folder = "/Users/sintes/Desktop/TestDistance"
-    calculator = DistanceCalculator(folder)
-    calculator.distance_bacteria()
-    pairs = calculator.pair_distances.groupby(['i','j']).count().reset_index()[["i", "j"]]
-    for pair in pairs.iterrows():
-        ana = DistanceAnalyser(folder, pair[1].i, pair[1].j)
-        if ana.potential_fusion():
-            print(pair)
-        ana.plot_distance()
+    parent_folder = "/Users/sintes/Desktop/TestDistance"
+    folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
+    folder_list.sort()
+
+    folders = []
+    i_list = []
+    j_list = []
+    last_ims = []
+
+    for folder in folder_list:
+        print(folder)
+
+        try:
+            os.makedirs(os.path.join(folder, "Figures/Distance"))
+        except FileExistsError:
+            pass
+        calculator = DistanceCalculator(folder)
+        calculator.distance_bacteria()
+        pairs = calculator.pair_distances.groupby(['i','j']).count().reset_index()[["i", "j"]]
+        for pair in pairs.iterrows():
+            ana = DistanceAnalyser(folder, pair[1].i, pair[1].j)
+            if ana.potential_fusion():
+                folders.append(folder)
+                i_list.append(ana.i)
+                j_list.append(ana.j)
+                last_ims.append(ana.distance.im.max())
+            ana.plot_distance()
+
+    pot_fusion = pd.DataFrame({
+        "folder": folders,
+        "i": i_list,
+        "j": j_list,
+        "last_im": last_ims,
+        "checked": [0 for i in folders]
+    })
+    pot_fusion.to_csv(os.path.join(parent_folder, "Potential_fusion.csv"))
