@@ -107,6 +107,15 @@ class DistanceAnalyser:
         assert len(self.distance.i.unique()) == 1
         assert len(self.distance.j.unique()) == 1
 
+    def potential_fusion(self) -> bool:
+        """Check if there is a potential fusion of the two bacteria."""
+        if len(self.distance) > 60:
+            end_distance = self.distance.distance[-30:].min()
+            if end_distance < 20:
+                if self.distance.distance[-60: -30].mean() > end_distance:
+                    return True
+        return False
+
     def plot_distance(self):
         """Plot the distance as a function of time"""
         plt.figure()
@@ -125,4 +134,6 @@ if __name__=="__main__":
     pairs = calculator.pair_distances.groupby(['i','j']).count().reset_index()[["i", "j"]]
     for pair in pairs.iterrows():
         ana = DistanceAnalyser(folder, pair[1].i, pair[1].j)
+        if ana.potential_fusion():
+            print(pair)
         ana.plot_distance()
