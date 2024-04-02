@@ -23,7 +23,7 @@ class ChainGenerator:
         vel_bacteria: np.ndarray[float] = np.zeros(n)
         for i in range(n):
             vel_bacteria[i] = self.sample_vel()
-        return max(vel_bacteria)
+        return max(vel_bacteria), np.mean(vel_bacteria)
 
 class GaussianChainGenerator(ChainGenerator):
     def __init__(self, mean: float, std: float) -> None:
@@ -68,17 +68,20 @@ class Simulation:
         self.chain_generator = chain_generator
         self.lengths: List[int] = []
         self.max_vels: List[float] = []
+        self.mean_vels: List[float] = []
 
     def generate_chains(self, max_chain_length: int, nb_chain_by_length: int) -> None:
         """Generate chains for the different length"""
         for n in range(1, max_chain_length + 1):
             for _ in range(nb_chain_by_length):
-                max_vel = self.chain_generator.generate(n)
+                max_vel, mean = self.chain_generator.generate(n)
                 self.lengths.append(n)
                 self.max_vels.append(max_vel)
+                self.mean_vels.append(mean)
         data = pd.DataFrame({
             "length": self.lengths,
             "max_vel": self.max_vels,
+            "mean_vel": self.mean_vels
         })
         self.data = data
 

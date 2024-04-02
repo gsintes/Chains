@@ -2,7 +2,7 @@
 
 import os
 import sqlite3
-from typing import List, Tuple, Any
+from typing import List, Tuple
 
 import numpy as np
 import matplotlib.pyplot as plt
