@@ -111,7 +111,7 @@ class DistanceAnalyser:
         """Check if there is a potential fusion of the two bacteria."""
         if len(self.distance) > 60:
             end_distance = self.distance.distance[-30:].min()
-            if end_distance < 20:
+            if end_distance < 40:
                 if self.distance.distance[-60: -30].mean() > end_distance:
                     return True
         return False
@@ -128,7 +128,7 @@ class DistanceAnalyser:
         plt.close()
 
 if __name__=="__main__":
-    parent_folder = "/Users/sintes/Desktop/TestDistance"
+    parent_folder = "/run/user/1000/gvfs/afp-volume:host=Suspension_Lab.local,volume=Guillaume/ChainFormation/"
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
 
