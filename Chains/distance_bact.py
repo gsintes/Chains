@@ -8,6 +8,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
+import time
+
+def timeit(f):
+
+    def timed(*args, **kw):
+
+        ts = time.time()
+        result = f(*args, **kw)
+        te = time.time()
+
+        print('func:%r args:[%r, %r] took: %2.4f sec' % \
+          (f.__name__, args, kw, te-ts))
+        return result
+
+    return timed
+
 def load_data(path: str, frame_rate: int) -> pd.DataFrame:
         """Load the data from the database."""
         dbfile = os.path.join(path, "Tracking_Result/tracking.db")
@@ -58,21 +74,27 @@ class DistanceCalculator:
                 if len_track < thresh:
                     self.data = self.data.drop(self.data[self.data["id"] == id].index)
     
+    @timeit
     def distance_bacteria(self) -> None:
         """Calculate the distance for all pairs of bacteria"""
         ids = self.data.id.unique()
         ids.sort()
-        self.pair_distances = pd.DataFrame(columns=["i", "j", "im", "distance"])
+        res = []
         for k, i in enumerate(ids):
             for j in ids[k + 1:]:
-                distances = self.distance_pair(i, j)
-                df = pd.DataFrame({
-                    "im": [res[0] for res in distances],
-                    "distance": [res[1] for res in distances]
-                })
-                df["i"] = i
-                df["j"] = j
-                self.pair_distances = pd.concat((self.pair_distances, df))
+                dist = self.distance_pair(i, j)
+                for d in dist:
+                    res.append([i, j, d[0], d[1]])
+        if len(res) > 0:
+            res = np.array(res)
+            self.pair_distances = pd.DataFrame({
+                "i": res[:, 0],
+                "j": res[:, 1],
+                "im": res[:, 2],
+                "distance": res[:, 3]
+            })
+        else:
+            self.pair_distances = pd.DataFrame()
         self.pair_distances.dropna(inplace=True)
         self.pair_distances.to_csv(os.path.join(self.path, "Tracking_Result/distances.csv"), index=False)
 
@@ -80,7 +102,6 @@ class DistanceCalculator:
         """Calculate the distance for all times """
         data = self.data[self.data["id"]==i]
         data = pd.concat((data, self.data[self.data["id"]==j]))
-        assert len(data.id.unique()) == 2
         images = list(data["imageNumber"].unique())
         images.sort()
         res = []
@@ -101,12 +122,16 @@ class DistanceAnalyser:
         distance = pd.read_csv(os.path.join(self.path, "Tracking_Result/distances.csv"))
         self.distance = distance[distance["i"]==i]
         self.distance = self.distance[self.distance["j"]==j]
-        self.tracking = load_data(self.path, 30)
         self.i = i
         self.j = j
-        assert len(self.distance.i.unique()) == 1
-        assert len(self.distance.j.unique()) == 1
 
+    def process(self) -> bool:
+        "Run the distance analysis."
+        pot = self.potential_fusion()
+        if pot:
+            self.plot_distance()
+        return pot
+    
     def potential_fusion(self) -> bool:
         """Check if there is a potential fusion of the two bacteria."""
         if len(self.distance) > 60:
@@ -115,7 +140,7 @@ class DistanceAnalyser:
                 if self.distance.distance[-60: -30].mean() > end_distance:
                     return True
         return False
-
+    
     def plot_distance(self):
         """Plot the distance as a function of time"""
         plt.figure()
@@ -124,11 +149,11 @@ class DistanceAnalyser:
         plt.xlabel("Image")
         plt.ylabel("Distance (pixel)")
         plt.title(f"Pair: ({self.i}, {self.j})")
-        plt.savefig(os.path.join(self.path, f"Figures/Distance/{self.i}-{self.j}.png"))
+        plt.savefig(os.path.join(self.path, f"Figure/Distance/{self.i}-{self.j}.png"))
         plt.close()
 
 if __name__=="__main__":
-    parent_folder = "/run/user/1000/gvfs/afp-volume:host=Suspension_Lab.local,volume=Guillaume/ChainFormation/"
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 11%"
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
 
@@ -138,23 +163,25 @@ if __name__=="__main__":
     last_ims = []
 
     for folder in folder_list:
-        print(folder)
+        print(folder.split("/")[-1])
 
         try:
-            os.makedirs(os.path.join(folder, "Figures/Distance"))
+            os.makedirs(os.path.join(folder, "Figure/Distance"))
         except FileExistsError:
             pass
         calculator = DistanceCalculator(folder)
         calculator.distance_bacteria()
-        pairs = calculator.pair_distances.groupby(['i','j']).count().reset_index()[["i", "j"]]
-        for pair in pairs.iterrows():
-            ana = DistanceAnalyser(folder, pair[1].i, pair[1].j)
-            if ana.potential_fusion():
-                folders.append(folder)
-                i_list.append(ana.i)
-                j_list.append(ana.j)
-                last_ims.append(ana.distance.im.max())
-            ana.plot_distance()
+        try:
+            pairs = calculator.pair_distances.groupby(['i','j']).count().reset_index()[["i", "j"]]
+            for pair in pairs.iterrows():
+                ana = DistanceAnalyser(folder, pair[1].i, pair[1].j)
+                if ana.process():
+                    folders.append(folder)
+                    i_list.append(ana.i)
+                    j_list.append(ana.j)
+                    last_ims.append(ana.distance.im.max())
+        except KeyError:
+            pass
 
     pot_fusion = pd.DataFrame({
         "folder": folders,
