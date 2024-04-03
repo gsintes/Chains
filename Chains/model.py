@@ -116,8 +116,18 @@ class Model(ABC):
         """Calculate the torque on the flagella."""
         pass
 
-    def process(self, flagella_rot: float=1) -> Dict[str, float]:
-        """Perform all the calculations."""
+    @abstractmethod
+    def calculate_flagella_rot(self, torque: float = 1)-> float:
+        """Calculate the flagella rotation from the torque."""
+        pass
+
+    def process(self, torque: bool = True, value: float=1) -> Dict[str, float]:
+        """Perform all the calculations.
+        if torque == true, the torque is constant, if not, the rotation is constant, the constant quantity is equalt to value"""
+        if torque:
+            flagella_rot = self.calculate_flagella_rot(value)
+        else:  
+            flagella_rot = value
         return {"n": self.n,
                 "flagella_rot": flagella_rot,
                 "body_rot": self.calculate_body_rotation(flagella_rot),
@@ -160,6 +170,9 @@ class NaiveModel(Model):
     def calculate_torque_flagella(self, flagella_rot: float = 1) -> float:
         v = self.calculate_velocity(flagella_rot)
         return - self.Bf * v + self.Df * flagella_rot
+    
+    def calculate_flagella_rot(self, torque: float = 1)-> float:
+        return (self.A0 + self.Af) * torque / (self.Df * (self.A0 + self.Af) - self.Bf ** 2) 
 
 class NaiveModelAlpha1(NaiveModel):
     """Naive model where we consider the full length of the flagella propelling."""
@@ -217,6 +230,11 @@ class SimpleInteractionModel(Model):
         v = self.calculate_velocity(flagella_rot)
         body_rot = self.calculate_body_rotation(flagella_rot)
         return - self.Bt * v + self.Dbf * body_rot + self.Dt * flagella_rot
+    
+    def calculate_flagella_rot(self, torque: float = 1)-> float:
+        v = torque * (self.Bt * (self.D0 - self.Dbf) + self.Bbf * self.Dt) / (self.D0 * (self.Dt * (self.A0 + self.At) - self.Bt ** 2))
+        Omega = torque / self.D0
+        return (v * (self.A0 + self.At) - self.Bbf * Omega) / self.Bt
     
 
 class InteractionModel2(Model):
@@ -279,7 +297,7 @@ class RunnerModel:
         data = pd.DataFrame()
         for n in self.range:
             modeln = self.model(n)
-            res = pd.DataFrame(modeln.process(), index=[n])
+            res = pd.DataFrame(modeln.process(torque=False), index=[n])
             if len(data) == 0:
                 data = pd.DataFrame(res)
             else:
@@ -338,15 +356,15 @@ if __name__=="__main__":
     data3 = runner.run_serie()
     runner.plot("/Users/sintes/Desktop/NASGuillaume/Chains/Figures/Models/Interaction1")
 
-    runner = RunnerModel(InteractionModel2, 8)
-    data4 = runner.run_serie()
-    runner.plot("/Users/sintes/Desktop/NASGuillaume/Chains/Figures/Models/Interaction2")
+    # runner = RunnerModel(InteractionModel2, 8)
+    # data4 = runner.run_serie()
+    # runner.plot("/Users/sintes/Desktop/NASGuillaume/Chains/Figures/Models/Interaction2")
 
     plt.figure()
     plt.plot(data1["n"], data1["Normalized_vel"] , "o", label=r"Naive $\alpha=0$")
     plt.plot(data2["n"], data2["Normalized_vel"] , "o", label=r"Naive  $\alpha=1$")
     plt.plot(data3["n"], data3["Normalized_vel"] , "o", label="Interaction 1")
-    plt.plot(data4["n"], data4["Normalized_vel"] , "o", label="Interaction 2")
+    # plt.plot(data4["n"], data4["Normalized_vel"] , "o", label="Interaction 2")
     plt.ylabel("$V / V_{single}$")
     plt.xlabel("Chain length")
     plt.legend()
