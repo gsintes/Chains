@@ -74,7 +74,6 @@ class DistanceCalculator:
                 if len_track < thresh:
                     self.data = self.data.drop(self.data[self.data["id"] == id].index)
     
-    @timeit
     def distance_bacteria(self) -> None:
         """Calculate the distance for all pairs of bacteria"""
         ids = self.data.id.unique()
@@ -117,9 +116,8 @@ class DistanceCalculator:
 
 class DistanceAnalyser:
     """Analyse the distance between to objects"""
-    def __init__(self, path: str, i: int, j: int) -> None:
+    def __init__(self, path: str, distance: pd.DataFrame, i: int, j: int) -> None:
         self.path = path
-        distance = pd.read_csv(os.path.join(self.path, "Tracking_Result/distances.csv"))
         self.distance = distance[distance["i"]==i]
         self.distance = self.distance[self.distance["j"]==j]
         self.i = i
@@ -174,7 +172,7 @@ if __name__=="__main__":
         try:
             pairs = calculator.pair_distances.groupby(['i','j']).count().reset_index()[["i", "j"]]
             for pair in pairs.iterrows():
-                ana = DistanceAnalyser(folder, pair[1].i, pair[1].j)
+                ana = DistanceAnalyser(folder, calculator.pair_distances, pair[1].i, pair[1].j)
                 if ana.process():
                     folders.append(folder)
                     i_list.append(ana.i)
