@@ -1,6 +1,7 @@
 """Calculate the distance between two bacteria over time."""
 
 import os
+import datetime
 import sqlite3
 from typing import List, Tuple
 
@@ -159,10 +160,11 @@ if __name__=="__main__":
     i_list = []
     j_list = []
     last_ims = []
+    log_file = os.path.join(parent_folder, "log.txt")
+    with open(log_file, "w") as file:
+        file.write("Distance code \n")
 
     for folder in folder_list:
-        print(folder.split("/")[-1])
-
         try:
             os.makedirs(os.path.join(folder, "Figure/Distance"))
         except FileExistsError:
@@ -180,7 +182,8 @@ if __name__=="__main__":
                     last_ims.append(ana.distance.im.max())
         except KeyError:
             pass
-
+        with open(log_file, 'a') as file:
+            file.write(f"{folder} done at {datetime.now()}\n")
     pot_fusion = pd.DataFrame({
         "folder": folders,
         "i": i_list,
