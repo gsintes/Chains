@@ -117,8 +117,9 @@ class DistanceCalculator:
 
 class DistanceAnalyser:
     """Analyse the distance between to objects"""
-    def __init__(self, path: str, distance: pd.DataFrame, i: int, j: int) -> None:
+    def __init__(self, path: str, distance: pd.DataFrame, tracking: pd.DataFrame, i: int, j: int) -> None:
         self.path = path
+        self.tracking = tracking
         self.distance = distance[distance["i"]==i]
         self.distance = self.distance[self.distance["j"]==j]
         self.i = i
@@ -131,12 +132,27 @@ class DistanceAnalyser:
             self.plot_distance()
         return pot
     
+    def last_disparition(self) -> int:
+        """Check if both particles disappear simultenaously"""
+        self.track_i = self.tracking[self.tracking["id"==self.i]]
+        self.track_j = self.tracking[self.tracking["id"==self.i]]
+        last_im_i = self.track_i.imageNumber.max()
+        last_im_j = self.track_j.imageNumber.max()
+        if (last_im_i - last_im_j) > 0:
+            return self.i
+        if last_im_j < last_im_j:
+            return self.j
+        else:
+            return 0
+
     def potential_fusion(self) -> bool:
         """Check if there is a potential fusion of the two bacteria."""
         if len(self.distance) > 60:
             end_distance = self.distance.distance[-30:].min()
-            if end_distance < 40:
+            if end_distance < 20:
                 if self.distance.distance[-60: -30].mean() > end_distance:
+                    print(self.last_disparition())
+
                     return True
         return False
     
@@ -169,12 +185,13 @@ if __name__=="__main__":
             os.makedirs(os.path.join(folder, "Figure/Distance"))
         except FileExistsError:
             pass
-        calculator = DistanceCalculator(folder)
-        calculator.distance_bacteria()
         try:
+            calculator = DistanceCalculator(folder)
+            calculator.distance_bacteria()
+        
             pairs = calculator.pair_distances.groupby(['i','j']).count().reset_index()[["i", "j"]]
             for pair in pairs.iterrows():
-                ana = DistanceAnalyser(folder, calculator.pair_distances, pair[1].i, pair[1].j)
+                ana = DistanceAnalyser(folder, calculator.pair_distances, calculator.data, pair[1].i, pair[1].j)
                 if ana.process():
                     folders.append(folder)
                     i_list.append(ana.i)
