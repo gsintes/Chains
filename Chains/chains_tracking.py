@@ -78,8 +78,9 @@ def main(folder_path: str) -> str:
 if __name__=="__main__":
     parent_folder = "/home/guillaume/NAS/ChainFormation/"
     log_file = os.path.join(parent_folder, "log.txt")
+
     with open(log_file, 'w') as file:
-        file.write("Tracking code \n")
+        file.write("Tracking code \n") 
 
     folder_list: List[Tuple[str]] = [(os.path.join(parent_folder, f),) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
