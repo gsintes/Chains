@@ -149,7 +149,7 @@ class DistanceAnalyser:
         """Check if there is a potential fusion of the two bacteria."""
         if len(self.distance) > 60:
             end_distance = self.distance.distance[-30:].min()
-            if end_distance < 2000:
+            if end_distance < 20:
                 if self.distance.distance[-60: -30].mean() > end_distance:
                     print(self.path, self.i, self.j, self.last_disparition())
 

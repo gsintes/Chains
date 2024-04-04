@@ -146,7 +146,7 @@ class Result():
                 os.remove(os.path.join(path, "tracking.db"))
             except FileNotFoundError:
                 pass
-        self.cnx = sqlite3.connect(path + "/tracking.db")
+        self.cnx = sqlite3.connect(os.path.join(path,"tracking.db"))
         cursor = self.cnx.cursor()
         cursor.execute("CREATE TABLE tracking ( xHead REAL, yHead REAL, tHead REAL, xTail REAL,"
                        "yTail REAL, tTail REAL, xBody REAL, yBody REAL, tBody REAL,"

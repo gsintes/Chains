@@ -78,6 +78,7 @@ def main(folder_path: str) -> str:
 if __name__=="__main__":
     parent_folder = "/Volumes/Chains/PassiveAgregation/"
     log_file = os.path.join(parent_folder, "log.txt")
+    
     try:
         os.remove(log_file)
     except FileNotFoundError:
