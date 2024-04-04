@@ -76,12 +76,11 @@ def main(folder_path: str) -> str:
     return f"{exp_name} done at {datetime.now()}\n"
 
 if __name__=="__main__":
-    parent_folder = "/Volumes/Chains/PassiveAgregation/"
+    parent_folder = "/home/guillaume/NAS/ChainFormation/"
     log_file = os.path.join(parent_folder, "log.txt")
-    try:
-        os.remove(log_file)
-    except FileNotFoundError:
-        pass
+    with open(log_file, 'w') as file:
+        file.write("Tracking code \n")
+
     folder_list: List[Tuple[str]] = [(os.path.join(parent_folder, f),) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
 
