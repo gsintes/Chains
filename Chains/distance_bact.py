@@ -134,8 +134,8 @@ class DistanceAnalyser:
     
     def last_disparition(self) -> int:
         """Check if both particles disappear simultenaously"""
-        self.track_i = self.tracking[self.tracking["id"==self.i]]
-        self.track_j = self.tracking[self.tracking["id"==self.i]]
+        self.track_i = self.tracking[self.tracking["id"]==self.i]
+        self.track_j = self.tracking[self.tracking["id"]==self.j]
         last_im_i = self.track_i.imageNumber.max()
         last_im_j = self.track_j.imageNumber.max()
         if (last_im_i - last_im_j) > 0:
@@ -149,9 +149,9 @@ class DistanceAnalyser:
         """Check if there is a potential fusion of the two bacteria."""
         if len(self.distance) > 60:
             end_distance = self.distance.distance[-30:].min()
-            if end_distance < 20:
+            if end_distance < 2000:
                 if self.distance.distance[-60: -30].mean() > end_distance:
-                    print(self.last_disparition())
+                    print(self.path, self.i, self.j, self.last_disparition())
 
                     return True
         return False
@@ -168,18 +168,16 @@ class DistanceAnalyser:
         plt.close()
 
 if __name__=="__main__":
-    parent_folder = "/home/guillaume/NAS/Chains/Chains 12%"
+    parent_folder = "/Users/sintes/Desktop/TestDistance"
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
 
-    folders = []
-    i_list = []
-    j_list = []
-    last_ims = []
     log_file = os.path.join(parent_folder, "log.txt")
     with open(log_file, "w") as file:
         file.write("Distance code \n")
-
+    res_file = os.path.join(parent_folder, "Potential_fusion.csv")
+    with open(res_file, "w") as file:
+        file.write("folder,i,j,last_im,checked\n")
     for folder in folder_list:
         try:
             os.makedirs(os.path.join(folder, "Figure/Distance"))
@@ -193,19 +191,12 @@ if __name__=="__main__":
             for pair in pairs.iterrows():
                 ana = DistanceAnalyser(folder, calculator.pair_distances, calculator.data, pair[1].i, pair[1].j)
                 if ana.process():
-                    folders.append(folder)
-                    i_list.append(ana.i)
-                    j_list.append(ana.j)
-                    last_ims.append(ana.distance.im.max())
-        except KeyError:
+                    ana.plot_distance()
+                    with open(res_file, "a") as file:
+                        f = folder.split("/")[-1]
+                        last_im = ana.distance.im.max()
+                        file.write(f"{f},{ana.i}, {ana.j},{last_im},0\n")
+        except KeyError as e:
             pass
         with open(log_file, 'a') as file:
             file.write(f"{folder} done at {datetime.now()}\n")
-    pot_fusion = pd.DataFrame({
-        "folder": folders,
-        "i": i_list,
-        "j": j_list,
-        "last_im": last_ims,
-        "checked": [0 for i in folders]
-    })
-    pot_fusion.to_csv(os.path.join(parent_folder, "Potential_fusion.csv"))
