@@ -9,21 +9,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-import time
 
-def timeit(f):
+BACTLENGTH = 10
 
-    def timed(*args, **kw):
-
-        ts = time.time()
-        result = f(*args, **kw)
-        te = time.time()
-
-        print('func:%r args:[%r, %r] took: %2.4f sec' % \
-          (f.__name__, args, kw, te-ts))
-        return result
-
-    return timed
 
 def load_data(path: str, frame_rate: int) -> pd.DataFrame:
         """Load the data from the database."""
@@ -34,6 +22,25 @@ def load_data(path: str, frame_rate: int) -> pd.DataFrame:
         df = df[['xBody', 'yBody', 'tBody', 'bodyMajorAxisLength', 'bodyMinorAxisLength', 'imageNumber', 'id']]
         df["time"] = df["imageNumber"] / frame_rate 
         return df
+   
+def detect_plateau_value(sequence: pd.Series) -> float:
+    """Detect a plateau in a serie."""
+
+    window_size = 10
+    list_seq = list(sequence)
+    std_moving = sequence.rolling(window_size).std()
+    mean = std_moving.mean()
+    std = std_moving.std()
+
+    values: List[float] = []
+    for i, val_std in enumerate(std_moving):
+        if val_std < mean - std:
+            values.append(list_seq[i])
+    if len(values) != 0:    
+        return np.mean(values)
+    else:
+        return sequence.mean()
+
 
 class DistanceCalculator:
     """Object to calculate distance between pairs of bacteria over time."""
@@ -132,18 +139,32 @@ class DistanceAnalyser:
             self.plot_distance()
         return pot
     
-    def last_disparition(self) -> int:
+    def last_disparition(self) -> str:
         """Check if both particles disappear simultenaously"""
         self.track_i = self.tracking[self.tracking["id"]==self.i]
         self.track_j = self.tracking[self.tracking["id"]==self.j]
         last_im_i = self.track_i.imageNumber.max()
         last_im_j = self.track_j.imageNumber.max()
         if (last_im_i - last_im_j) > 0:
-            return self.i
+            return "i"
         if last_im_j < last_im_j:
-            return self.j
+            return "j"
         else:
-            return 0
+            return ""
+        
+    def size_increase(self, remaining) -> bool:
+        """Check if the remaining particles increases in size."""
+        if remaining == "i":
+            remaining_track = self.track_i
+            disparu = self.track_j
+        else:
+            remaining_track = self.track_j
+            disparu = self.track_i
+        size_disparu = detect_plateau_value(disparu.bodyMajorAxisLength)
+        previous_size = detect_plateau_value(remaining_track[remaining_track["imageNumber"] < self.last_im].bodyMajorAxisLength)
+        new_size = detect_plateau_value(remaining_track[remaining_track["imageNumber"] > self.last_im].bodyMajorAxisLength)
+        delta_size = new_size - previous_size
+        return (0.75 * size_disparu < delta_size < 1.25 * size_disparu)
 
     def potential_fusion(self) -> bool:
         """Check if there is a potential fusion of the two bacteria."""
@@ -151,9 +172,12 @@ class DistanceAnalyser:
             end_distance = self.distance.distance[-30:].min()
             if end_distance < 20:
                 if self.distance.distance[-60: -30].mean() > end_distance:
-                    print(self.path, self.i, self.j, self.last_disparition())
-
-                    return True
+                    self.last_im = ana.distance.im.max()
+                    remaining = self.last_disparition()
+                    if remaining == "":
+                        return True
+                    else:
+                        return self.size_increase(remaining)
         return False
     
     def plot_distance(self):
@@ -194,8 +218,7 @@ if __name__=="__main__":
                     ana.plot_distance()
                     with open(res_file, "a") as file:
                         f = folder.split("/")[-1]
-                        last_im = ana.distance.im.max()
-                        file.write(f"{f},{ana.i}, {ana.j},{last_im},0\n")
+                        file.write(f"{f},{ana.i}, {ana.j},{ana.last_im},0\n")
         except KeyError as e:
             pass
         with open(log_file, 'a') as file:
