@@ -269,6 +269,8 @@ def main(parent_folder: str) -> None:
                 calculator.distance_bacteria()
                 pair_distances = calculator.pair_distances
                 tracking_data = calculator.data
+            except pd.errors.EmptyDataError:
+                pair_distances = pd.DataFrame()
             distance_analysis_folder(folder, res_file, pair_distances, tracking_data)
         except KeyError as e:
             pass
@@ -276,5 +278,5 @@ def main(parent_folder: str) -> None:
             file.write(f"{folder} done at {datetime.now()}\n")    
 
 if __name__=="__main__":
-    parent_folder = "/Users/sintes/Desktop/TestDistance"
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 11%"
     main(parent_folder)
