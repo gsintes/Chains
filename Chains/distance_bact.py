@@ -11,6 +11,8 @@ import pandas as pd
 
 pd.options.mode.chained_assignment = None  # default='warn'
 BACTLENGTH = 10
+FRAME_RATE = 30
+SCALE = 6.24
 
 
 def load_data(path: str, frame_rate: int) -> pd.DataFrame:
@@ -50,16 +52,29 @@ def get_apparition(data: pd.DataFrame) -> List[Tuple[int, int]]:
         res.append((int(id), int(sub_data.imageNumber.min())))
     return res
 
+def clean(data: pd.DataFrame) -> pd.DataFrame:
+    """Clean the data by removing to short tracks."""
+    ids = data["id"].unique()
+    for id in ids:
+        length: float = BACTLENGTH * data.loc[data["id"] == id, "Velocity"].mean() 
+        vel: float = SCALE * data.loc[data["id"] == id, "Velocity"].mean() / FRAME_RATE#pix/frame
+        if vel < 0.2:
+            data: pd.DataFrame = data.drop(data[data["id"] == id].index)
+        else:
+            thresh = length / vel
+            len_track = len(data.loc[data["id"] == id])
+            if len_track < thresh:
+                data = data.drop(data[data["id"] == id].index)
+    return data.copy()
+
 class DistanceCalculator:
     """Object to calculate distance between pairs of bacteria over time."""
     def __init__(self, path: str) -> None:
-        self.bactLength = 10
-        self.frame_rate = 30
-        self.scale = 6.24
+        
         self.path = path
         self.data = load_data(path, self.frame_rate)
         self.calculate_velocity()
-        self.clean()
+        self.data = clean(self.data)
     
     def calculate_velocity(self) -> None:
         """Calculate velocities."""
@@ -69,26 +84,13 @@ class DistanceCalculator:
             data = self.data.loc[self.data["id"] == id]
             coord = ["xBody", "yBody"]
             for ax in coord:
-                pos_diff = data[ax].diff() / self.scale
+                pos_diff = data[ax].diff() / SCALE
                 time_diff = data["time"].diff()
                 
                 velocity = pos_diff / time_diff
                 self.data.loc[velocity.index, ax[0] + "Vel"] = velocity
         self.data["Velocity"] = np.sqrt(self.data["xVel"] ** 2 + self.data["yVel"] ** 2)
     
-    def clean(self) -> None:
-        """Clean the data by removing to short tracks."""
-        ids = self.data["id"].unique()
-        for id in ids:
-            length: float = self.bactLength * self.data.loc[self.data["id"] == id, "Velocity"].mean() 
-            vel: float = self.scale * self.data.loc[self.data["id"] == id, "Velocity"].mean() / self.frame_rate #pix/frame
-            if vel < 0.2:
-                self.data: pd.DataFrame = self.data.drop(self.data[self.data["id"] == id].index)
-            else:
-                thresh = length / vel
-                len_track = len(self.data.loc[self.data["id"] == id])
-                if len_track < thresh:
-                    self.data = self.data.drop(self.data[self.data["id"] == id].index)
     
     def distance_bacteria(self) -> None:
         """Calculate the distance for all pairs of bacteria"""
@@ -271,8 +273,9 @@ def main(parent_folder: str) -> None:
         try:
             try:
                 tracking_data = load_data(folder, 30)
+                tracking_data = clean(tracking_data)
                 pair_distances = pd.read_csv(os.path.join(folder, "Tracking_Result/distances.csv"))
-            except FileNotFoundError:
+            except (FileNotFoundError, OSError):
                 calculator = DistanceCalculator(folder)
                 calculator.distance_bacteria()
                 pair_distances = calculator.pair_distances
