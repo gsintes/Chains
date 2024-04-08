@@ -172,8 +172,8 @@ class DistanceAnalyser:
         size_disparu = detect_plateau_value(disparu.bodyMajorAxisLength)
         previous_size = detect_plateau_value(remaining_track[remaining_track["imageNumber"] < self.last_im].bodyMajorAxisLength)
         new_size = detect_plateau_value(remaining_track[remaining_track["imageNumber"] > self.last_im].bodyMajorAxisLength)
-        delta_size = new_size - previous_size
-        return (0.75 * size_disparu < delta_size < 1.25 * size_disparu)
+        delta_size = np.abs(new_size - previous_size)
+        return  delta_size / size_disparu < 0.1
     
     def apparition_to_check(self) -> List[int]:
         """Check if a chain appears after a disparition."""
@@ -191,15 +191,15 @@ class DistanceAnalyser:
         size_j = detect_plateau_value(self.track_j.bodyMajorAxisLength)
         size_sum = size_i + size_j
         size_new = detect_plateau_value(sub_data.bodyMajorAxisLength)
-        if 0.75 * size_sum < size_new < 1.25 * size_sum:
+        if np.abs(size_new - size_sum) / size_sum < 0.1:
             final_x = self.track_i[self.track_i.imageNumber == self.last_im].xBody.iloc[0] 
             initial_x = sub_data.xBody.iloc[0]
             delta = np.abs(final_x - initial_x)
-            if delta < 2 * size_sum:
+            if delta < size_sum:
                 final_y = self.track_i[self.track_i.imageNumber == self.last_im].xBody.iloc[0] 
                 initial_y = sub_data.xBody.iloc[0]
                 delta = np.abs(final_y - initial_y)
-                if delta < 2 * size_sum:
+                if delta < size_sum:
                     return True
             return False
         return False
