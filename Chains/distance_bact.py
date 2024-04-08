@@ -179,7 +179,7 @@ class DistanceAnalyser:
         """Check if a chain appears after a disparition."""
         res: List[int] = []
         for app in self.apparitions:
-            if self.last_im - 10 < app[1] < self.last_im + 30:
+            if self.last_im - 10 < app[1] < self.last_im + 10:
                 print(self.last_im - app[1])
                 res.append(app[0])
         return res
