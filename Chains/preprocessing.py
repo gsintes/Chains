@@ -97,7 +97,6 @@ def elongate_objects(binarized_image: np.ndarray, nb_iter: int = 2, kernel_size:
     label_img = label(binarized_image)
     regions = regionprops(label_img)
     binarized_image = binarized_image.astype("int8") * 255
-    # print(binarized_image.dtype)
     for props in regions:
         centroid_y = props.centroid[0]
         centroid_x = props.centroid[1]
