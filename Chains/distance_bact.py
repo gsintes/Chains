@@ -14,6 +14,19 @@ BACTLENGTH = 10
 FRAME_RATE = 30
 SCALE = 6.24
 
+def calculate_velocity(data: pd.DataFrame) -> pd.DataFrame:
+    """Calculate velocities."""
+    ids = data["id"].unique()
+    for id in ids:
+        data = data.loc[data["id"] == id]
+        coord = ["xBody", "yBody"]
+        for ax in coord:
+            pos_diff = data[ax].diff() / SCALE
+            time_diff = data["time"].diff()
+            velocity = pos_diff / time_diff
+            data.loc[velocity.index, ax[0] + "Vel"] = velocity
+    data["Velocity"] = np.sqrt(data["xVel"] ** 2 + data["yVel"] ** 2)
+    return data
 
 def load_data(path: str, frame_rate: int) -> pd.DataFrame:
         """Load the data from the database."""
@@ -22,8 +35,9 @@ def load_data(path: str, frame_rate: int) -> pd.DataFrame:
         df = pd.read_sql_query('SELECT * FROM tracking', con)
         con.close()
         df = df[['xBody', 'yBody', 'tBody', 'bodyMajorAxisLength', 'bodyMinorAxisLength', 'imageNumber', 'id']]
-        df["time"] = df["imageNumber"] / frame_rate 
-        return df
+        df["time"] = df["imageNumber"] / frame_rate
+        df = calculate_velocity(df)
+        return clean(df)
    
 def detect_plateau_value(sequence: pd.Series) -> float:
     """Detect a plateau in a serie."""
@@ -74,23 +88,6 @@ class DistanceCalculator:
         self.path = path
         self.data = load_data(path, self.frame_rate)
         self.calculate_velocity()
-        self.data = clean(self.data)
-    
-    def calculate_velocity(self) -> None:
-        """Calculate velocities."""
-        ids = self.data["id"].unique()
-        ids.sort()
-        for id in ids:
-            data = self.data.loc[self.data["id"] == id]
-            coord = ["xBody", "yBody"]
-            for ax in coord:
-                pos_diff = data[ax].diff() / SCALE
-                time_diff = data["time"].diff()
-                
-                velocity = pos_diff / time_diff
-                self.data.loc[velocity.index, ax[0] + "Vel"] = velocity
-        self.data["Velocity"] = np.sqrt(self.data["xVel"] ** 2 + self.data["yVel"] ** 2)
-    
     
     def distance_bacteria(self) -> None:
         """Calculate the distance for all pairs of bacteria"""
@@ -273,7 +270,6 @@ def main(parent_folder: str) -> None:
         try:
             try:
                 tracking_data = load_data(folder, 30)
-                tracking_data = clean(tracking_data)
                 pair_distances = pd.read_csv(os.path.join(folder, "Tracking_Result/distances.csv"))
             except (FileNotFoundError, OSError):
                 calculator = DistanceCalculator(folder)
@@ -284,11 +280,11 @@ def main(parent_folder: str) -> None:
                 pair_distances = pd.DataFrame()
             distance_analysis_folder(folder, res_file, pair_distances, tracking_data)
         except KeyError as e:
-            pass
+            print("KeyError")
         with open(log_file, 'a') as file:
             f = folder.split("/")[-1]
             file.write(f"{f} done at {datetime.now()}\n")    
 
 if __name__=="__main__":
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 12%"
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 11%"
     main(parent_folder)
