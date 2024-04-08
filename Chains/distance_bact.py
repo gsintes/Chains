@@ -41,6 +41,14 @@ def detect_plateau_value(sequence: pd.Series) -> float:
     else:
         return sequence.mean()
 
+def get_apparition(data: pd.DataFrame) -> List[Tuple[int, int]]:
+    """Detect the apparition for each ids."""
+    ids = data.id.unique()
+    res = []
+    for id in ids:
+        sub_data = data[data.id==id]
+        res.append((int(id), int(sub_data.imageNumber.min())))
+    return res
 
 class DistanceCalculator:
     """Object to calculate distance between pairs of bacteria over time."""
@@ -124,13 +132,14 @@ class DistanceCalculator:
 
 class DistanceAnalyser:
     """Analyse the distance between to objects"""
-    def __init__(self, path: str, distance: pd.DataFrame, tracking: pd.DataFrame, i: int, j: int) -> None:
+    def __init__(self, path: str, distance: pd.DataFrame, tracking: pd.DataFrame, apparitions, i: int, j: int) -> None:
         self.path = path
         self.tracking = tracking
         self.distance = distance[distance["i"]==i]
         self.distance = self.distance[self.distance["j"]==j]
         self.i = i
         self.j = j
+        self.apparitions = apparitions
 
     def process(self) -> bool:
         "Run the distance analysis."
@@ -165,6 +174,15 @@ class DistanceAnalyser:
         new_size = detect_plateau_value(remaining_track[remaining_track["imageNumber"] > self.last_im].bodyMajorAxisLength)
         delta_size = new_size - previous_size
         return (0.75 * size_disparu < delta_size < 1.25 * size_disparu)
+    
+    def apparition_to_check(self) -> List[int]:
+        """Check if a chain appears after a disparition."""
+        res: List[int] = []
+        for app in self.apparitions:
+            if self.last_im - 10 < app[1] < self.last_im + 30:
+                print(self.last_im - app[1])
+                res.append(app[0])
+        return res
 
     def potential_fusion(self) -> bool:
         """Check if there is a potential fusion of the two bacteria."""
@@ -172,12 +190,18 @@ class DistanceAnalyser:
             end_distance = self.distance.distance[-30:].min()
             if end_distance < 20:
                 if self.distance.distance[-60: -30].mean() > end_distance:
-                    self.last_im = ana.distance.im.max()
+                    self.last_im = self.distance.im.max()
                     remaining = self.last_disparition()
                     if remaining == "":
+                        to_check = self.apparition_to_check()
+                        print(self.i, self.j, to_check)
+                        if len(to_check) == 0:
+                            return False
                         return True
                     else:
-                        return self.size_increase(remaining)
+                        if self.size_increase(remaining):
+                            print(self.i, self.j, remaining)
+                            return True
         return False
     
     def plot_distance(self):
@@ -191,8 +215,23 @@ class DistanceAnalyser:
         plt.savefig(os.path.join(self.path, f"Figure/Distance/{self.i}-{self.j}.png"))
         plt.close()
 
-if __name__=="__main__":
-    parent_folder = "/Users/sintes/Desktop/TestDistance"
+
+def distance_analysis_folder(folder: str,
+                             res_file: str,
+                             pair_distances: pd.DataFrame,
+                             tracking_data: pd.DataFrame) -> None:
+    """Run the analysis for the folder."""
+    pairs = pair_distances.groupby(['i','j']).count().reset_index()[["i", "j"]]
+    apparitions = get_apparition(tracking_data)
+    for pair in pairs.iterrows():
+                ana = DistanceAnalyser(folder, pair_distances, tracking_data, apparitions, pair[1].i, pair[1].j)
+                if ana.process():
+                    ana.plot_distance()
+                    with open(res_file, "a") as file:
+                        f = folder.split("/")[-1]
+                        file.write(f"{f},{ana.i}, {ana.j},{ana.last_im},0\n")
+
+def main(parent_folder: str) -> None:
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
 
@@ -203,23 +242,26 @@ if __name__=="__main__":
     with open(res_file, "w") as file:
         file.write("folder,i,j,last_im,checked\n")
     for folder in folder_list:
+        print(folder.split("/")[-1])
         try:
             os.makedirs(os.path.join(folder, "Figure/Distance"))
         except FileExistsError:
             pass
         try:
-            calculator = DistanceCalculator(folder)
-            calculator.distance_bacteria()
-        
-            pairs = calculator.pair_distances.groupby(['i','j']).count().reset_index()[["i", "j"]]
-            for pair in pairs.iterrows():
-                ana = DistanceAnalyser(folder, calculator.pair_distances, calculator.data, pair[1].i, pair[1].j)
-                if ana.process():
-                    ana.plot_distance()
-                    with open(res_file, "a") as file:
-                        f = folder.split("/")[-1]
-                        file.write(f"{f},{ana.i}, {ana.j},{ana.last_im},0\n")
+            try:
+                tracking_data = load_data(folder, 30)
+                pair_distances = pd.read_csv(os.path.join(folder, "Tracking_Result/distances.csv"))
+            except FileNotFoundError:
+                calculator = DistanceCalculator(folder)
+                calculator.distance_bacteria()
+                pair_distances = calculator.pair_distances
+                tracking_data = calculator.data
+            distance_analysis_folder(folder, res_file, pair_distances, tracking_data)
         except KeyError as e:
             pass
         with open(log_file, 'a') as file:
-            file.write(f"{folder} done at {datetime.now()}\n")
+            file.write(f"{folder} done at {datetime.now()}\n")    
+
+if __name__=="__main__":
+    parent_folder = "/Users/sintes/Desktop/TestDistance"
+    main(parent_folder)
