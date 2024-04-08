@@ -180,9 +180,21 @@ class DistanceAnalyser:
         res: List[int] = []
         for app in self.apparitions:
             if self.last_im - 10 < app[1] < self.last_im + 10:
-                print(self.last_im - app[1])
                 res.append(app[0])
         return res
+
+    def check_apparition(self, id) -> bool:
+        """Check if the new chain could be from the fusion."""
+        sub_data: pd.DataFrame = self.tracking[self.tracking==id]
+        sub_data.sort_values(by="imageNumber", inplace=True)
+        size_i = detect_plateau_value(self.track_i.bodyMajorAxisLength)
+        size_j = detect_plateau_value(self.track_j.bodyMajorAxisLength)
+        size_sum = size_i + size_j
+        size_new = detect_plateau_value(sub_data.bodyMajorAxisLength)
+        if 0.75 * size_sum < size_new < 1.25 * size_sum:
+            # final_x = self.track_i[self.track_i.imageNumber == self.last_im].xBody.iloc[0] #TODO refine
+            # initial_x = sub_data.xBody.iloc[0]
+            return True
 
     def potential_fusion(self) -> bool:
         """Check if there is a potential fusion of the two bacteria."""
@@ -194,13 +206,14 @@ class DistanceAnalyser:
                     remaining = self.last_disparition()
                     if remaining == "":
                         to_check = self.apparition_to_check()
-                        print(self.i, self.j, to_check)
                         if len(to_check) == 0:
                             return False
-                        return True
+                        for id in to_check:
+                            if self.check_apparition(id):
+                                return True
+                        return False
                     else:
                         if self.size_increase(remaining):
-                            print(self.i, self.j, remaining)
                             return True
         return False
     
