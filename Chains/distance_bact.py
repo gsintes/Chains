@@ -11,7 +11,22 @@ import pandas as pd
 
 pd.options.mode.chained_assignment = None  # default='warn'
 BACTLENGTH = 10
+FRAME_RATE = 30
+SCALE = 6.24
 
+def calculate_velocity(data: pd.DataFrame) -> pd.DataFrame:
+    """Calculate velocities."""
+    ids = data["id"].unique()
+    for id in ids:
+        data = data.loc[data["id"] == id]
+        coord = ["xBody", "yBody"]
+        for ax in coord:
+            pos_diff = data[ax].diff() / SCALE
+            time_diff = data["time"].diff()
+            velocity = pos_diff / time_diff
+            data.loc[velocity.index, ax[0] + "Vel"] = velocity
+    data["Velocity"] = np.sqrt(data["xVel"] ** 2 + data["yVel"] ** 2)
+    return data
 
 def load_data(path: str, frame_rate: int) -> pd.DataFrame:
         """Load the data from the database."""
@@ -20,8 +35,9 @@ def load_data(path: str, frame_rate: int) -> pd.DataFrame:
         df = pd.read_sql_query('SELECT * FROM tracking', con)
         con.close()
         df = df[['xBody', 'yBody', 'tBody', 'bodyMajorAxisLength', 'bodyMinorAxisLength', 'imageNumber', 'id']]
-        df["time"] = df["imageNumber"] / frame_rate 
-        return df
+        df["time"] = df["imageNumber"] / frame_rate
+        df = calculate_velocity(df)
+        return clean(df)
    
 def detect_plateau_value(sequence: pd.Series) -> float:
     """Detect a plateau in a serie."""
@@ -50,45 +66,28 @@ def get_apparition(data: pd.DataFrame) -> List[Tuple[int, int]]:
         res.append((int(id), int(sub_data.imageNumber.min())))
     return res
 
+def clean(data: pd.DataFrame) -> pd.DataFrame:
+    """Clean the data by removing to short tracks."""
+    ids = data["id"].unique()
+    for id in ids:
+        length: float = BACTLENGTH * data.loc[data["id"] == id, "Velocity"].mean() 
+        vel: float = SCALE * data.loc[data["id"] == id, "Velocity"].mean() / FRAME_RATE#pix/frame
+        if vel < 0.2:
+            data: pd.DataFrame = data.drop(data[data["id"] == id].index)
+        else:
+            thresh = length / vel
+            len_track = len(data.loc[data["id"] == id])
+            if len_track < thresh:
+                data = data.drop(data[data["id"] == id].index)
+    return data.copy()
+
 class DistanceCalculator:
     """Object to calculate distance between pairs of bacteria over time."""
     def __init__(self, path: str) -> None:
-        self.bactLength = 10
-        self.frame_rate = 30
-        self.scale = 6.24
+        
         self.path = path
         self.data = load_data(path, self.frame_rate)
         self.calculate_velocity()
-        self.clean()
-    
-    def calculate_velocity(self) -> None:
-        """Calculate velocities."""
-        ids = self.data["id"].unique()
-        ids.sort()
-        for id in ids:
-            data = self.data.loc[self.data["id"] == id]
-            coord = ["xBody", "yBody"]
-            for ax in coord:
-                pos_diff = data[ax].diff() / self.scale
-                time_diff = data["time"].diff()
-                
-                velocity = pos_diff / time_diff
-                self.data.loc[velocity.index, ax[0] + "Vel"] = velocity
-        self.data["Velocity"] = np.sqrt(self.data["xVel"] ** 2 + self.data["yVel"] ** 2)
-    
-    def clean(self) -> None:
-        """Clean the data by removing to short tracks."""
-        ids = self.data["id"].unique()
-        for id in ids:
-            length: float = self.bactLength * self.data.loc[self.data["id"] == id, "Velocity"].mean() 
-            vel: float = self.scale * self.data.loc[self.data["id"] == id, "Velocity"].mean() / self.frame_rate #pix/frame
-            if vel < 0.2:
-                self.data: pd.DataFrame = self.data.drop(self.data[self.data["id"] == id].index)
-            else:
-                thresh = length / vel
-                len_track = len(self.data.loc[self.data["id"] == id])
-                if len_track < thresh:
-                    self.data = self.data.drop(self.data[self.data["id"] == id].index)
     
     def distance_bacteria(self) -> None:
         """Calculate the distance for all pairs of bacteria"""
@@ -271,7 +270,7 @@ def main(parent_folder: str) -> None:
             try:
                 tracking_data = load_data(folder, 30)
                 pair_distances = pd.read_csv(os.path.join(folder, "Tracking_Result/distances.csv"))
-            except FileNotFoundError:
+            except (FileNotFoundError, OSError):
                 calculator = DistanceCalculator(folder)
                 calculator.distance_bacteria()
                 pair_distances = calculator.pair_distances
@@ -280,11 +279,11 @@ def main(parent_folder: str) -> None:
                 pair_distances = pd.DataFrame()
             distance_analysis_folder(folder, res_file, pair_distances, tracking_data)
         except KeyError as e:
-            pass
+            print("KeyError")
         with open(log_file, 'a') as file:
             f = folder.split("/")[-1]
             file.write(f"{f} done at {datetime.now()}\n")    
 
 if __name__=="__main__":
-    parent_folder = "/home/guillaume/NAS/Chains/Chains 13.7%"
+    parent_folder = "/home/guillaume/NAS/Chains/Chains 12%"
     main(parent_folder)
