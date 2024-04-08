@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-
+pd.options.mode.chained_assignment = None  # default='warn'
 BACTLENGTH = 10
 
 
@@ -185,16 +185,24 @@ class DistanceAnalyser:
 
     def check_apparition(self, id) -> bool:
         """Check if the new chain could be from the fusion."""
-        sub_data: pd.DataFrame = self.tracking[self.tracking==id]
-        sub_data.sort_values(by="imageNumber", inplace=True)
+        sub_data: pd.DataFrame = self.tracking[self.tracking.id ==id]
+        sub_data.sort_values(by="imageNumber", inplace=True, ignore_index=True)
         size_i = detect_plateau_value(self.track_i.bodyMajorAxisLength)
         size_j = detect_plateau_value(self.track_j.bodyMajorAxisLength)
         size_sum = size_i + size_j
         size_new = detect_plateau_value(sub_data.bodyMajorAxisLength)
         if 0.75 * size_sum < size_new < 1.25 * size_sum:
-            # final_x = self.track_i[self.track_i.imageNumber == self.last_im].xBody.iloc[0] #TODO refine
-            # initial_x = sub_data.xBody.iloc[0]
-            return True
+            final_x = self.track_i[self.track_i.imageNumber == self.last_im].xBody.iloc[0] 
+            initial_x = sub_data.xBody.iloc[0]
+            delta = np.abs(final_x - initial_x)
+            if delta < 2 * size_sum:
+                final_y = self.track_i[self.track_i.imageNumber == self.last_im].xBody.iloc[0] 
+                initial_y = sub_data.xBody.iloc[0]
+                delta = np.abs(final_y - initial_y)
+                if delta < 2 * size_sum:
+                    return True
+            return False
+        return False
 
     def potential_fusion(self) -> bool:
         """Check if there is a potential fusion of the two bacteria."""
@@ -275,8 +283,9 @@ def main(parent_folder: str) -> None:
         except KeyError as e:
             pass
         with open(log_file, 'a') as file:
-            file.write(f"{folder} done at {datetime.now()}\n")    
+            f = folder.split("/")[-1]
+            file.write(f"{f} done at {datetime.now()}\n")    
 
 if __name__=="__main__":
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 11%"
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 12%"
     main(parent_folder)
