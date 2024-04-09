@@ -86,7 +86,7 @@ class DistanceCalculator:
     def __init__(self, path: str) -> None:
         
         self.path = path
-        self.data = load_data(path, self.frame_rate)
+        self.data = load_data(path, FRAME_RATE)
         self.calculate_velocity()
     
     def distance_bacteria(self) -> None:
@@ -285,5 +285,5 @@ def main(parent_folder: str) -> None:
             file.write(f"{f} done at {datetime.now()}\n")    
 
 if __name__=="__main__":
-    parent_folder = "/home/guillaume/NAS/Chains/Chains 12%"
+    parent_folder = "/home/guillaume/NAS/Chains/Chains 13.7%"
     main(parent_folder)
