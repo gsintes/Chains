@@ -269,29 +269,28 @@ def main(parent_folder: str) -> None:
     with open(res_file, "w") as file:
         file.write("folder,i,j,last_im,checked\n")
     for folder in folder_list:
-        print(folder.split("/")[-1])
         try:
             os.makedirs(os.path.join(folder, "Figure/Distance"))
         except FileExistsError:
             shutil.rmtree(os.path.join(folder, "Figure/Distance"))
             os.makedirs(os.path.join(folder, "Figure/Distance"))
         try:
+            tracking_data = load_data(folder, 30)
             try:
-                tracking_data = load_data(folder, 30)
                 pair_distances = pd.read_csv(os.path.join(folder, "Tracking_Result/distances.csv"))
             except (FileNotFoundError, OSError, pd.errors.EmptyDataError):
-                print("Calc")
                 calculator = DistanceCalculator(folder)
                 calculator.distance_bacteria()
                 pair_distances = calculator.pair_distances
                 tracking_data = calculator.data
-            distance_analysis_folder(folder, res_file, pair_distances, tracking_data)
+            if not pair_distances.empty:
+                distance_analysis_folder(folder, res_file, pair_distances, tracking_data)
         except NotEnoughDataError as e:
-            print("Not enough data")
+            pass
         with open(log_file, 'a') as file:
             f = folder.split("/")[-1]
             file.write(f"{f} done at {datetime.now()}\n")    
 
 if __name__=="__main__":
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 13.7%"
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 12%"
     main(parent_folder)
