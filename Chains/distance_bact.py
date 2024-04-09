@@ -202,11 +202,11 @@ class DistanceAnalyser:
             final_x = self.track_i[self.track_i.imageNumber == self.last_im].xBody.iloc[0] 
             initial_x = sub_data.xBody.iloc[0]
             delta = np.abs(final_x - initial_x)
-            if delta < size_sum:
+            if delta < 0.5 * size_sum:
                 final_y = self.track_i[self.track_i.imageNumber == self.last_im].xBody.iloc[0] 
                 initial_y = sub_data.xBody.iloc[0]
                 delta = np.abs(final_y - initial_y)
-                if delta < size_sum:
+                if delta < 0.5 * size_sum:
                     return True
             return False
         return False
@@ -216,7 +216,7 @@ class DistanceAnalyser:
         if len(self.distance) > 60:
             end_distance = self.distance.distance[-30:].min()
             if end_distance < 20:
-                if self.distance.distance[-60: -30].mean() > end_distance:
+                if self.distance.distance[-60: -30].mean() > end_distance: #TODO modify
                     self.last_im = self.distance.im.max()
                     remaining = self.last_disparition()
                     if remaining == "":
@@ -269,11 +269,12 @@ def main(parent_folder: str) -> None:
     with open(res_file, "w") as file:
         file.write("folder,i,j,last_im,checked\n")
     for folder in folder_list:
+        fig_folder = os.path.join(folder, "Figure/Distance")
         try:
-            os.makedirs(os.path.join(folder, "Figure/Distance"))
+            os.makedirs(fig_folder)
         except FileExistsError:
-            shutil.rmtree(os.path.join(folder, "Figure/Distance"))
-            os.makedirs(os.path.join(folder, "Figure/Distance"))
+            shutil.rmtree(fig_folder)
+            os.makedirs(fig_folder)
         try:
             tracking_data = load_data(folder, 30)
             try:
