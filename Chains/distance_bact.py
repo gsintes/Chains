@@ -84,11 +84,10 @@ def clean(data: pd.DataFrame) -> pd.DataFrame:
 class DistanceCalculator:
     """Object to calculate distance between pairs of bacteria over time."""
     def __init__(self, path: str) -> None:
-        
+
         self.path = path
         self.data = load_data(path, FRAME_RATE)
-        self.calculate_velocity()
-    
+
     def distance_bacteria(self) -> None:
         """Calculate the distance for all pairs of bacteria"""
         ids = self.data.id.unique()
@@ -146,7 +145,7 @@ class DistanceAnalyser:
         if pot:
             self.plot_distance()
         return pot
-    
+
     def last_disparition(self) -> str:
         """Check if both particles disappear simultenaously"""
         self.track_i = self.tracking[self.tracking["id"]==self.i]
@@ -159,7 +158,7 @@ class DistanceAnalyser:
             return "j"
         else:
             return ""
-        
+
     def size_increase(self, remaining) -> bool:
         """Check if the remaining particles increases in size."""
         if remaining == "i":
@@ -173,7 +172,7 @@ class DistanceAnalyser:
         new_size = detect_plateau_value(remaining_track[remaining_track["imageNumber"] > self.last_im].bodyMajorAxisLength)
         delta_size = np.abs(new_size - previous_size)
         return  delta_size / size_disparu < 0.1
-    
+
     def apparition_to_check(self) -> List[int]:
         """Check if a chain appears after a disparition."""
         res: List[int] = []
@@ -223,7 +222,7 @@ class DistanceAnalyser:
                         if self.size_increase(remaining):
                             return True
         return False
-    
+
     def plot_distance(self):
         """Plot the distance as a function of time"""
         plt.figure()
