@@ -46,18 +46,19 @@ class Visualisation:
             font = cv2.FONT_HERSHEY_SIMPLEX
 
             sub_data = self.data[self.data.imageNumber == i]
-            for _, row in sub_data.iterrows():
-                id_obj = int(row.id)
-                color = colors[id_obj % len(colors)]
-                center = (int(row.xBody), int(row.yBody))
-                center_writing = (int(row.xBody),
-                                int(row.yBody + row.bodyMajorAxisLength))
-                image_to_draw = cv2.ellipse(img=image_to_draw,
-                                    center=center,
-                                    axes=(int(row.bodyMajorAxisLength), int(row.bodyMinorAxisLength)),
-                                    angle=180 * (1 - row.tBody / np.pi), startAngle=0, endAngle=360,
-                                    color=color, thickness=1)
-                image_to_draw = cv2.putText(image_to_draw, str(id_obj), org=center_writing, fontFace=font, fontScale=1, color=color)
+            if not sub_data.empty:
+                for _, row in sub_data.iterrows():
+                    id_obj = int(row.id)
+                    color = colors[id_obj % len(colors)]
+                    center = (int(row.xBody), int(row.yBody))
+                    center_writing = (int(row.xBody),
+                                    int(row.yBody + row.bodyMajorAxisLength))
+                    image_to_draw = cv2.ellipse(img=image_to_draw,
+                                        center=center,
+                                        axes=(int(row.bodyMajorAxisLength), int(row.bodyMinorAxisLength)),
+                                        angle=180 * (1 - row.tBody / np.pi), startAngle=0, endAngle=360,
+                                        color=color, thickness=1)
+                    image_to_draw = cv2.putText(image_to_draw, str(id_obj), org=center_writing, fontFace=font, fontScale=1, color=color)
             cv2.imwrite(os.path.join(self.fig_folder, f"tracked{i:06d}.png"), image_to_draw)
 
 if __name__=="__main__":
