@@ -4,3 +4,4 @@ scikit-image
 matplotlib
 pandas
 seaborn
+scikit-learn

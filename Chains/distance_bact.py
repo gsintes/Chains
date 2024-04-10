@@ -9,6 +9,7 @@ from typing import List, Tuple
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from sklearn.linear_model import LinearRegression
 
 pd.options.mode.chained_assignment = None  # default='warn'
 BACTLENGTH = 10
@@ -179,7 +180,7 @@ class DistanceAnalyser:
         size_disparu = detect_plateau_value(disparu.bodyMajorAxisLength)
         previous_size = detect_plateau_value(remaining_track[remaining_track["imageNumber"] < self.last_im].bodyMajorAxisLength)
         new_size = detect_plateau_value(remaining_track[remaining_track["imageNumber"] > self.last_im].bodyMajorAxisLength)
-        delta_size = np.abs(new_size - previous_size)
+        delta_size = np.abs(new_size - previous_size) 
         return  delta_size / size_disparu < 0.1
 
     def apparition_to_check(self) -> List[int]:
@@ -202,21 +203,37 @@ class DistanceAnalyser:
             final_x = self.track_i[self.track_i.imageNumber == self.last_im].xBody.iloc[0] 
             initial_x = sub_data.xBody.iloc[0]
             delta = np.abs(final_x - initial_x)
-            if delta < size_sum:
+            if delta < 0.5 * size_sum:
                 final_y = self.track_i[self.track_i.imageNumber == self.last_im].xBody.iloc[0] 
                 initial_y = sub_data.xBody.iloc[0]
                 delta = np.abs(final_y - initial_y)
-                if delta < size_sum:
+                if delta < 0.5 * size_sum:
                     return True
             return False
+        return False
+    
+    def is_decreasing(self) -> bool:
+        """Check if the distance is decreasing in the last part."""
+        last_seconds = self.distance[self.distance.im >=  (self.last_im - 2 * FRAME_RATE)]
+        if len(last_seconds) < 30:
+            last_seconds = self.distance[-30:]
+        x = last_seconds[["im"]]
+        y = last_seconds["distance"]
+        self.model = LinearRegression()
+        self.model.fit(x, y)
+        if self.model.score(x, y) > 0.9:
+            if self.model.coef_ < 0:
+                self.x = x
+                return True
         return False
 
     def potential_fusion(self) -> bool:
         """Check if there is a potential fusion of the two bacteria."""
-        if len(self.distance) > 60:
-            end_distance = self.distance.distance[-30:].min()
+        if len(self.distance) > 2 * FRAME_RATE:
+            self.last_im = self.distance.im.max()
+            end_distance = self.distance[self.distance.im >=  (self.last_im - FRAME_RATE)].distance.min()
             if end_distance < 20:
-                if self.distance.distance[-60: -30].mean() > end_distance:
+                if self.is_decreasing(): 
                     self.last_im = self.distance.im.max()
                     remaining = self.last_disparition()
                     if remaining == "":
@@ -236,6 +253,7 @@ class DistanceAnalyser:
         """Plot the distance as a function of time"""
         plt.figure()
         plt.plot(self.distance["im"], self.distance["distance"], ".")
+        plt.plot(self.x, self.model.predict(self.x))
         plt.ylim(bottom=0)
         plt.xlabel("Image")
         plt.ylabel("Distance (pixel)")
@@ -256,7 +274,7 @@ def distance_analysis_folder(folder: str,
                 if ana.process():
                     with open(res_file, "a") as file:
                         f = folder.split("/")[-1]
-                        file.write(f"{f},{ana.i}, {ana.j},{ana.last_im},0\n")
+                        file.write(f"{f},{int(ana.i)},{int(ana.j)},{int(ana.last_im)},0\n")
 
 def main(parent_folder: str) -> None:
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
@@ -269,11 +287,12 @@ def main(parent_folder: str) -> None:
     with open(res_file, "w") as file:
         file.write("folder,i,j,last_im,checked\n")
     for folder in folder_list:
+        fig_folder = os.path.join(folder, "Figure/Distance")
         try:
-            os.makedirs(os.path.join(folder, "Figure/Distance"))
+            os.makedirs(fig_folder)
         except FileExistsError:
-            shutil.rmtree(os.path.join(folder, "Figure/Distance"))
-            os.makedirs(os.path.join(folder, "Figure/Distance"))
+            shutil.rmtree(fig_folder)
+            os.makedirs(fig_folder)
         try:
             tracking_data = load_data(folder, 30)
             try:
@@ -292,5 +311,5 @@ def main(parent_folder: str) -> None:
             file.write(f"{f} done at {datetime.now()}\n")
 
 if __name__=="__main__":
-    parent_folder = "/home/guillaume/NAS/Chains/Chains 13.7%"
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 11%"
     main(parent_folder)
