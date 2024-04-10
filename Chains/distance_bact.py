@@ -9,6 +9,7 @@ from typing import List, Tuple
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from sklearn.linear_model import LinearRegression
 
 pd.options.mode.chained_assignment = None  # default='warn'
 BACTLENGTH = 10
@@ -207,21 +208,30 @@ class DistanceAnalyser:
                 initial_y = sub_data.xBody.iloc[0]
                 delta = np.abs(final_y - initial_y)
                 if delta < 0.5 * size_sum:
-                    return True #TODO add thresh on tbody
+                    return True
             return False
         return False
     
     def is_decreasing(self) -> bool:
         """Check if the distance is decreasing in the last part."""
-        end_distance = self.distance[self.distance.im >=  (self.last_im - 30)].distance.mean()
-        sub_distance =  self.distance[self.distance.im <  (self.last_im - 30)]
-        return sub_distance[sub_distance.im >= (self.last_im - 60)].distance.mean() > end_distance #TODO modify
+        last_seconds = self.distance[self.distance.im >=  (self.last_im - 2 * FRAME_RATE)]
+        if len(last_seconds) < 30:
+            last_seconds = self.distance[-30:]
+        x = last_seconds[["im"]]
+        y = last_seconds["distance"]
+        self.model = LinearRegression()
+        self.model.fit(x, y)
+        if self.model.score(x, y) > 0.9:
+            if self.model.coef_ < 0:
+                self.x = x
+                return True
+        return False
 
     def potential_fusion(self) -> bool:
         """Check if there is a potential fusion of the two bacteria."""
-        if len(self.distance) > 60:
+        if len(self.distance) > 2 * FRAME_RATE:
             self.last_im = self.distance.im.max()
-            end_distance = self.distance[self.distance.im >=  (self.last_im - 30)].distance.min()
+            end_distance = self.distance[self.distance.im >=  (self.last_im - FRAME_RATE)].distance.min()
             if end_distance < 20:
                 if self.is_decreasing(): 
                     self.last_im = self.distance.im.max()
@@ -243,6 +253,7 @@ class DistanceAnalyser:
         """Plot the distance as a function of time"""
         plt.figure()
         plt.plot(self.distance["im"], self.distance["distance"], ".")
+        plt.plot(self.x, self.model.predict(self.x))
         plt.ylim(bottom=0)
         plt.xlabel("Image")
         plt.ylabel("Distance (pixel)")
