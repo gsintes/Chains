@@ -1,6 +1,7 @@
 """Calculate the distance between two bacteria over time."""
 
 import os
+import shutil
 from datetime import datetime
 import sqlite3
 from typing import List, Tuple
@@ -14,15 +15,19 @@ BACTLENGTH = 10
 FRAME_RATE = 30
 SCALE = 6.24
 
+class NotEnoughDataError(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
+
 def calculate_velocity(data: pd.DataFrame) -> pd.DataFrame:
     """Calculate velocities."""
     ids = data["id"].unique()
     for id in ids:
-        data = data.loc[data["id"] == id]
+        sub_data = data.loc[data["id"] == id]
         coord = ["xBody", "yBody"]
         for ax in coord:
-            pos_diff = data[ax].diff() / SCALE
-            time_diff = data["time"].diff()
+            pos_diff = sub_data[ax].diff() / SCALE
+            time_diff = sub_data["time"].diff()
             velocity = pos_diff / time_diff
             data.loc[velocity.index, ax[0] + "Vel"] = velocity
     data["Velocity"] = np.sqrt(data["xVel"] ** 2 + data["yVel"] ** 2)
@@ -36,9 +41,13 @@ def load_data(path: str, frame_rate: int) -> pd.DataFrame:
         con.close()
         df = df[['xBody', 'yBody', 'tBody', 'bodyMajorAxisLength', 'bodyMinorAxisLength', 'imageNumber', 'id']]
         df["time"] = df["imageNumber"] / frame_rate
-        df = calculate_velocity(df)
-        return clean(df)
-   
+        if len(df.id.unique()) > 1:
+            df = calculate_velocity(df)
+            df = clean(df)
+            if len(df.id.unique()) > 1:
+                return df
+        raise NotEnoughDataError("Need at least two differents chains.")
+
 def detect_plateau_value(sequence: pd.Series) -> float:
     """Detect a plateau in a serie."""
 
@@ -71,7 +80,7 @@ def clean(data: pd.DataFrame) -> pd.DataFrame:
     ids = data["id"].unique()
     for id in ids:
         length: float = BACTLENGTH * data.loc[data["id"] == id, "Velocity"].mean() 
-        vel: float = SCALE * data.loc[data["id"] == id, "Velocity"].mean() / FRAME_RATE#pix/frame
+        vel: float = SCALE * data.loc[data["id"] == id, "Velocity"].mean() / FRAME_RATE #pix/frame
         if vel < 0.2:
             data: pd.DataFrame = data.drop(data[data["id"] == id].index)
         else:
@@ -79,7 +88,7 @@ def clean(data: pd.DataFrame) -> pd.DataFrame:
             len_track = len(data.loc[data["id"] == id])
             if len_track < thresh:
                 data = data.drop(data[data["id"] == id].index)
-    return data.copy()
+    return data
 
 class DistanceCalculator:
     """Object to calculate distance between pairs of bacteria over time."""
@@ -231,7 +240,8 @@ class DistanceAnalyser:
         plt.xlabel("Image")
         plt.ylabel("Distance (pixel)")
         plt.title(f"Pair: ({self.i}, {self.j})")
-        plt.savefig(os.path.join(self.path, f"Figure/Distance/{self.i}-{self.j}.png"))
+        file_name = os.path.join(self.path, f"Figure/Distance/{int(self.i)}-{int(self.j)}.png")
+        plt.savefig(file_name)
         plt.close()
 
 def distance_analysis_folder(folder: str,
@@ -244,7 +254,6 @@ def distance_analysis_folder(folder: str,
     for pair in pairs.iterrows():
                 ana = DistanceAnalyser(folder, pair_distances, tracking_data, apparitions, pair[1].i, pair[1].j)
                 if ana.process():
-                    ana.plot_distance()
                     with open(res_file, "a") as file:
                         f = folder.split("/")[-1]
                         file.write(f"{f},{ana.i}, {ana.j},{ana.last_im},0\n")
@@ -260,28 +269,27 @@ def main(parent_folder: str) -> None:
     with open(res_file, "w") as file:
         file.write("folder,i,j,last_im,checked\n")
     for folder in folder_list:
-        print(folder.split("/")[-1])
         try:
             os.makedirs(os.path.join(folder, "Figure/Distance"))
         except FileExistsError:
-            pass
+            shutil.rmtree(os.path.join(folder, "Figure/Distance"))
+            os.makedirs(os.path.join(folder, "Figure/Distance"))
         try:
+            tracking_data = load_data(folder, 30)
             try:
-                tracking_data = load_data(folder, 30)
                 pair_distances = pd.read_csv(os.path.join(folder, "Tracking_Result/distances.csv"))
-            except (FileNotFoundError, OSError):
+            except (FileNotFoundError, OSError, pd.errors.EmptyDataError):
                 calculator = DistanceCalculator(folder)
                 calculator.distance_bacteria()
                 pair_distances = calculator.pair_distances
                 tracking_data = calculator.data
-            except pd.errors.EmptyDataError:
-                pair_distances = pd.DataFrame()
-            distance_analysis_folder(folder, res_file, pair_distances, tracking_data)
-        except KeyError as e:
-            print("KeyError")
+            if not pair_distances.empty:
+                distance_analysis_folder(folder, res_file, pair_distances, tracking_data)
+        except NotEnoughDataError as e:
+            pass
         with open(log_file, 'a') as file:
             f = folder.split("/")[-1]
-            file.write(f"{f} done at {datetime.now()}\n")    
+            file.write(f"{f} done at {datetime.now()}\n")
 
 if __name__=="__main__":
     parent_folder = "/home/guillaume/NAS/Chains/Chains 13.7%"
