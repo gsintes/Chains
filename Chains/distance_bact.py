@@ -274,7 +274,7 @@ def distance_analysis_folder(folder: str,
                 if ana.process():
                     with open(res_file, "a") as file:
                         f = folder.split("/")[-1]
-                        file.write(f"{f},{ana.i}, {ana.j},{ana.last_im},0\n")
+                        file.write(f"{f},{int(ana.i)},{int(ana.j)},{int(ana.last_im)},0\n")
 
 def main(parent_folder: str) -> None:
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
@@ -311,5 +311,5 @@ def main(parent_folder: str) -> None:
             file.write(f"{f} done at {datetime.now()}\n")    
 
 if __name__=="__main__":
-    parent_folder = "/Users/sintes/Desktop/TestDistance"
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 11%"
     main(parent_folder)
