@@ -179,7 +179,7 @@ class DistanceAnalyser:
         size_disparu = detect_plateau_value(disparu.bodyMajorAxisLength)
         previous_size = detect_plateau_value(remaining_track[remaining_track["imageNumber"] < self.last_im].bodyMajorAxisLength)
         new_size = detect_plateau_value(remaining_track[remaining_track["imageNumber"] > self.last_im].bodyMajorAxisLength)
-        delta_size = np.abs(new_size - previous_size)
+        delta_size = np.abs(new_size - previous_size) 
         return  delta_size / size_disparu < 0.1
     
     def apparition_to_check(self) -> List[int]:
@@ -207,16 +207,23 @@ class DistanceAnalyser:
                 initial_y = sub_data.xBody.iloc[0]
                 delta = np.abs(final_y - initial_y)
                 if delta < 0.5 * size_sum:
-                    return True
+                    return True #TODO add thresh on tbody
             return False
         return False
+    
+    def is_decreasing(self) -> bool:
+        """Check if the distance is decreasing in the last part."""
+        end_distance = self.distance[self.distance.im >=  (self.last_im - 30)].distance.mean()
+        sub_distance =  self.distance[self.distance.im <  (self.last_im - 30)]
+        return sub_distance[sub_distance.im >= (self.last_im - 60)].distance.mean() > end_distance #TODO modify
 
     def potential_fusion(self) -> bool:
         """Check if there is a potential fusion of the two bacteria."""
         if len(self.distance) > 60:
-            end_distance = self.distance.distance[-30:].min()
+            self.last_im = self.distance.im.max()
+            end_distance = self.distance[self.distance.im >=  (self.last_im - 30)].distance.min()
             if end_distance < 20:
-                if self.distance.distance[-60: -30].mean() > end_distance: #TODO modify
+                if self.is_decreasing(): 
                     self.last_im = self.distance.im.max()
                     remaining = self.last_disparition()
                     if remaining == "":
@@ -293,5 +300,5 @@ def main(parent_folder: str) -> None:
             file.write(f"{f} done at {datetime.now()}\n")    
 
 if __name__=="__main__":
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 12%"
+    parent_folder = "/Users/sintes/Desktop/TestDistance"
     main(parent_folder)
