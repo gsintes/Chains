@@ -86,6 +86,11 @@ if __name__=="__main__":
     folder_list.sort()
 
     for f in folder_list:
-        log = main(f[0])
-        with open(log_file, 'a') as file:
-            file.write(log)
+        try:
+            log = main(f[0])
+            with open(log_file, 'a') as file:
+                file.write(log)
+        except Exception as e:
+            with open(log_file, 'a') as file:
+                exp_name = f.split("/")[-1]
+                file.write(f"{exp_name} error at {datetime.now()}: {e.__repr__}\n")            
