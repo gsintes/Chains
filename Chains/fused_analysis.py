@@ -288,6 +288,31 @@ def plot_min(data: pd.DataFrame, fig_folder: str) -> None:
     plt.savefig(os.path.join(fig_folder, "min.png"))
     plt.close()
 
+def plot_max(data: pd.DataFrame, fig_folder: str) -> None:
+    """Plot the min of the distribution with chain length."""
+    simu_data, _ = get_simu_data(data, from_data=True)
+    lengths_simu = simu_data.data.length.unique()
+    maxs_simu_data: List[float] = []
+    for l in lengths_simu:
+        sub_data = simu_data.data[simu_data.data.length==l]
+        maxs_simu_data.append(sub_data.max_vel.max())
+
+    lengths_exp = data.chain_length.unique()
+    maxs_exp: List[float] = []
+    for l in lengths_exp:
+        sub_data = data[data.chain_length==l]
+        maxs_exp.append(sub_data.velocity.max())
+
+
+    plt.figure()
+    plt.plot(lengths_exp, maxs_exp, "s", label="Experiment")
+    plt.plot(lengths_simu, maxs_simu_data, "o", label="Simulation data")
+    plt.xlabel("Chain length")
+    plt.ylabel("Maximum velocity")
+    plt.legend()
+    plt.savefig(os.path.join(fig_folder, "max.png"))
+    plt.close()
+
 if __name__ == "__main__":
     parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains"
     fig_folder = os.path.join(parent_folder, "Figures")
@@ -304,4 +329,5 @@ if __name__ == "__main__":
     std_plot(data, fig_folder)
     sample_size_plot(data, fig_folder)
     plot_min(data, fig_folder)
+    plot_max(data, fig_folder)
     
