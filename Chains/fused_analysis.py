@@ -263,6 +263,31 @@ def sample_size_plot(data: pd.DataFrame, fig_folder: str) -> None:
     plt.yscale("log")
     # plt.show(block=True)
 
+def plot_min(data: pd.DataFrame, fig_folder: str) -> None:
+    """Plot the min of the distribution with chain length."""
+    simu_data, _ = get_simu_data(data, from_data=True)
+    lengths_simu = simu_data.data.length.unique()
+    mins_simu_data: List[float] = []
+    for l in lengths_simu:
+        sub_data = simu_data.data[simu_data.data.length==l]
+        mins_simu_data.append(sub_data.max_vel.min())
+
+    lengths_exp = data.chain_length.unique()
+    mins_exp: List[float] = []
+    for l in lengths_exp:
+        sub_data = data[data.chain_length==l]
+        mins_exp.append(sub_data.velocity.min())
+
+
+    plt.figure()
+    plt.plot(lengths_exp, mins_exp, "s", label="Experiment")
+    plt.plot(lengths_simu, mins_simu_data, "o", label="Simulation data")
+    plt.xlabel("Chain length")
+    plt.ylabel("Minimum velocity")
+    plt.legend()
+    plt.savefig(os.path.join(fig_folder, "min.png"))
+    plt.close()
+
 if __name__ == "__main__":
     parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains"
     fig_folder = os.path.join(parent_folder, "Figures")
@@ -278,4 +303,5 @@ if __name__ == "__main__":
     plot_vel_by_exp(data, fig_folder)
     std_plot(data, fig_folder)
     sample_size_plot(data, fig_folder)
+    plot_min(data, fig_folder)
     
