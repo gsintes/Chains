@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from model import SimpleInteractionModel, RunnerModel
+from model import SimpleInteractionModel, RunnerModel, get_A0
 from runSimulation import get_simu_data   
 
 def get_concentration(concentration_folder: str) -> float:
@@ -313,6 +313,14 @@ def plot_max(data: pd.DataFrame, fig_folder: str) -> None:
     plt.savefig(os.path.join(fig_folder, "max.png"))
     plt.close()
 
+def plot_force(data: pd.DataFrame, fig_folder: str) -> None:
+    """Plot the force of the chain with chain length."""
+    data["force"] = data.velocity / get_A0(data.chain_length)
+    plt.figure()
+    sns.pointplot(data=data, x="chain_length", y="force", linestyles="")
+    plt.savefig(os.path.join(fig_folder, "force.png"))
+    plt.close()
+
 if __name__ == "__main__":
     parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains"
     fig_folder = os.path.join(parent_folder, "Figures")
@@ -321,6 +329,7 @@ if __name__ == "__main__":
     data.to_csv(os.path.join(parent_folder, "chain_data.csv"))
     
     data = data[data["chain_length"] <= 8]
+    plot_force(data, fig_folder)
     plot_proportion_sign(data, fig_folder)
     plots_velocity_vs_length(data, fig_folder)
     velocity_histograms(data, fig_folder)

@@ -76,7 +76,7 @@ def main(folder_path: str) -> str:
     return f"{exp_name} done at {datetime.now()}\n"
 
 if __name__=="__main__":
-    parent_folder = "/media/guillaume/Elements/ChainFormation/"
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/5min/2024-03-26_14h15m09s"
     log_file = os.path.join(parent_folder, "log.txt")
 
     with open(log_file, 'w') as file:
