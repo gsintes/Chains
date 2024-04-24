@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from model import SimpleInteractionModel, RunnerModel, get_A0
+import model
 from runSimulation import get_simu_data   
 
 def get_concentration(concentration_folder: str) -> float:
@@ -315,7 +315,7 @@ def plot_max(data: pd.DataFrame, fig_folder: str) -> None:
 
 def plot_force(data: pd.DataFrame, fig_folder: str) -> None:
     """Plot the force of the chain with chain length."""
-    data["force"] = data.velocity / get_A0(data.chain_length)
+    data["force"] = data.velocity / (model.get_A0(data.chain_length) + model.get_A_flagella(model.LENGTH))
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="force", linestyles="")
     plt.savefig(os.path.join(fig_folder, "force.png"))

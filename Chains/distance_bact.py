@@ -132,7 +132,7 @@ class DistanceCalculator:
             sub_data = data[data["imageNumber"]==im]
             if len(sub_data) == 2:
                 diff = sub_data.diff().dropna()
-                distance = np.sqrt(diff.xBody.max() ** 2 + diff.xBody.max() ** 2)
+                distance = np.sqrt(diff.xBody.max() ** 2 + diff.yBody.max() ** 2)
                 res.append((im, distance))
             elif len(sub_data) > 2:
                 raise ValueError()   
@@ -311,5 +311,5 @@ def main(parent_folder: str) -> None:
             file.write(f"{f} done at {datetime.now()}\n")
 
 if __name__=="__main__":
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 11%"
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 12%"
     main(parent_folder)
