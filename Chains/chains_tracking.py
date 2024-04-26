@@ -76,21 +76,23 @@ def main(folder_path: str) -> str:
     return f"{exp_name} done at {datetime.now()}\n"
 
 if __name__=="__main__":
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/5min/2024-03-26_14h15m09s"
-    log_file = os.path.join(parent_folder, "log.txt")
+    # parent_folder = "/Users/sintes/Desktop/NASGuillaume/5min/2024-03-26_14h15m09s"
+    # log_file = os.path.join(parent_folder, "log.txt")
 
-    with open(log_file, 'w') as file:
-        file.write("Tracking code \n") 
+    # with open(log_file, 'w') as file:
+    #     file.write("Tracking code \n") 
 
-    folder_list: List[Tuple[str]] = [(os.path.join(parent_folder, f),) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
-    folder_list.sort()
+    # folder_list: List[Tuple[str]] = [(os.path.join(parent_folder, f),) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
+    # folder_list.sort()
 
-    for f in folder_list:
-        try:
-            log = main(f[0])
-            with open(log_file, 'a') as file:
-                file.write(log)
-        except Exception as e:
-            with open(log_file, 'a') as file:
-                exp_name = f.split("/")[-1]
-                file.write(f"{exp_name} error at {datetime.now()}: {e.__repr__}\n")            
+    # for f in folder_list:
+    #     try:
+    #         log = main(f[0])
+    #         with open(log_file, 'a') as file:
+    #             file.write(log)
+    #     except Exception as e:
+    #         with open(log_file, 'a') as file:
+    #             exp_name = f.split("/")[-1]
+    #             file.write(f"{exp_name} error at {datetime.now()}: {e.__repr__}\n")            
+    folder = ""
+    main(folder)
