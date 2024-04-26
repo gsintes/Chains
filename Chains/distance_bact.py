@@ -216,9 +216,7 @@ class DistanceAnalyser:
         """Check if the distance is decreasing in the last part."""
         last_seconds = self.distance[self.distance.im >=  (self.last_im - 2 * FRAME_RATE)]
         if len(last_seconds) < 30:
-            last_seconds = self.distance[-30:]
-            if len(last_seconds) < 15:
-                return False
+            return False
         x = last_seconds[["im"]]
         y = last_seconds["distance"]
         self.model = LinearRegression()
