@@ -217,11 +217,13 @@ class DistanceAnalyser:
         last_seconds = self.distance[self.distance.im >=  (self.last_im - 2 * FRAME_RATE)]
         if len(last_seconds) < 30:
             last_seconds = self.distance[-30:]
+            if len(last_seconds) < 15:
+                return False
         x = last_seconds[["im"]]
         y = last_seconds["distance"]
         self.model = LinearRegression()
         self.model.fit(x, y)
-        if self.model.score(x, y) > 0.9:
+        if self.model.score(x, y) > 0.7:
             if self.model.coef_ < 0:
                 self.x = x
                 return True
@@ -311,5 +313,5 @@ def main(parent_folder: str) -> None:
             file.write(f"{f} done at {datetime.now()}\n")
 
 if __name__=="__main__":
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 12%"
+    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 13.7%"
     main(parent_folder)
