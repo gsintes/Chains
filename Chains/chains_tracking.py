@@ -69,7 +69,11 @@ def main(folder_path: str) -> str:
     im_data = tracker.initialize(preprocessing.convert_16to8bits(image_list[0], max_int))
     saver.add_data(im_data)
 
-    for im in image_list[1:]:
+    count = 0
+    for i, im in enumerate(image_list[1:]):
+        if 10 * i / len(image_list) > count + 10:
+            print(10 * i / len(image_list))
+            count += 10
         frame = preprocessing.convert_16to8bits(im, max_int)
         im_data = tracker.process(frame)
         saver.add_data(im_data)
@@ -94,5 +98,5 @@ if __name__=="__main__":
     #         with open(log_file, 'a') as file:
     #             exp_name = f.split("/")[-1]
     #             file.write(f"{exp_name} error at {datetime.now()}: {e.__repr__}\n")            
-    folder = ""
+    folder = "/Users/sintes/Desktop/NASGuillaume/ChainFormation/2024-03-13_13h19m16s"
     main(folder)
