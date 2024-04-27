@@ -70,9 +70,10 @@ def main(folder_path: str) -> str:
     saver.add_data(im_data)
 
     count = 0
-    for i, im in enumerate(image_list[1:10]):
-        if 100 * i / len(image_list[1:10]) > count + 5:
-            print(str(100 * i / len(image_list)) + "%")
+    for i, im in enumerate(image_list[1:]):
+        per = 100 * i / len(image_list)
+        if per > count + 5:
+            print(f"{per:.2f}2%")
             count += 5
         frame = preprocessing.convert_16to8bits(im, max_int)
         im_data = tracker.process(frame)
