@@ -72,7 +72,7 @@ def main(folder_path: str) -> str:
     count = 0
     for i, im in enumerate(image_list[1:10]):
         if 100 * i / len(image_list[1:10]) > count + 5:
-            print(100 * i / len(image_list) + "%")
+            print(str(100 * i / len(image_list)) + "%")
             count += 5
         frame = preprocessing.convert_16to8bits(im, max_int)
         im_data = tracker.process(frame)
