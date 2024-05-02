@@ -76,7 +76,7 @@ class Analysis():
         ids.sort()
         for id in ids:
             data = self.data.loc[self.data["id"] == id]
-            mean_length = analysis.detect_plateau_value(data["bodyMajorAxisLength"]) 
+            mean_length = Analysis.detect_plateau_value(data["bodyMajorAxisLength"]) 
             nb_bact = np.rint(mean_length / self.bactLength)
             self.data.loc[self.data["id"] == id, "bactNumber"] = nb_bact
 

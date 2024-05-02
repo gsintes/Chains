@@ -5,6 +5,7 @@ import shutil
 from datetime import datetime
 import sqlite3
 from typing import List, Tuple
+import multiprocessing as mp
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -127,6 +128,10 @@ class DistanceCalculator:
         data = pd.concat((data, self.data[self.data["id"]==j]))
         images = list(data["imageNumber"].unique())
         images.sort()
+        if len(images) > 2 * FRAME_RATE: 
+            images = images[: - 2 * FRAME_RATE]
+        else:
+            return []
         res = []
         for im in images:
             sub_data = data[data["imageNumber"]==im]
