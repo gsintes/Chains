@@ -13,11 +13,18 @@ np.seterr(all='raise')
 class Analysis():
     """Class to perform the analysis of chain tracking data."""
     def __init__(self, path) -> None:
-        self.bactLength = 10
-        self.frameRate = 30
-        self.scale = 6.24
         self.path = path
+        self.bactLength = 10
+        self.frameRate = self.read_frame_rate()
+        self.scale = 6.24
         self.data = self.load_data()
+
+    def read_frame_rate(self) -> int:
+        """Read the frame rate."""
+        info_file = os.path.join(self.path, "RawImageInfo.txt")
+        file = open(info_file, "r")
+        line = file.readline()
+        return int(line)
 
     def load_data(self) -> pd.DataFrame:
         """Load the data from the database."""
