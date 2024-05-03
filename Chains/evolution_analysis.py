@@ -1,15 +1,17 @@
 """Analyse the evolution of a sample with time."""
 
 import os
-from typing import Tuple
+import multiprocessing as mp
 
 import pandas as pd
 
 from tracking_analysis import Analysis
 
-folder = "/Volumes/Guillaume"
 
 import time
+class EmptyDataError(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
 
 class FolderAnalysis(Analysis):
     """Analyse the folder by time interval."""
@@ -17,8 +19,12 @@ class FolderAnalysis(Analysis):
 
     def __init__(self, folder: str) -> None:
         super().__init__(folder)
-        self.time_duration = self.data.time.max()
-        self.nb_time_inter = int(1 + self.time_duration // self.time_interval) 
+        if len(self.data) > 0:
+            self.time_duration = self.data.time.max()
+            self.nb_time_inter = int(1 + self.time_duration //  FolderAnalysis.time_interval) 
+        else:
+            self.time_duration = 0
+            self.nb_time_inter = 0
  
     def clean(self) -> None:
         """Clean the data"""
@@ -26,7 +32,6 @@ class FolderAnalysis(Analysis):
 
     def group_by_time(self, time_begining: int, time_end: int) -> pd.DataFrame:
         """Group the data by time interval."""
-        b = time.time()
         data = self.data[(self.data.time >= time_begining) & (self.data.time < time_end)]
         lengths = data.chain_length.unique()
 
@@ -44,15 +49,29 @@ class FolderAnalysis(Analysis):
         
     def __call__(self) -> None:
         """Process the analysis."""
-        self.calculate_velocity()
-        self.calculate_chain_length()
+        if self.nb_time_inter > 0:
+            self.calculate_velocity()
+            self.calculate_chain_length()
         
-        self.data = self.data.drop(["xBody", "yBody", "bodyMajorAxisLength"], axis=1)
-        self.clean()
-        self.group_by_time(0, 300)
+            self.data = self.data.drop(["xBody", "yBody", "bodyMajorAxisLength"], axis=1)
+            self.clean()
+            self.grouped_data = self.group_by_time(0, FolderAnalysis.time_interval)
+            for i in range(1, self.nb_time_inter):
+                self.grouped_data = pd.concat(self.grouped_data,
+                                              self.group_by_time(i * FolderAnalysis.time_interval, (i + 1) * FolderAnalysis.time_interval))
+        self.grouped_data.to_csv(os.path.join(self.path, "grouped_data.csv"))
 
-        
+def task(folder: str) -> int:
+    ana = FolderAnalysis(folder)
+    ana()
+
 
 if __name__=="__main__":
-    ana = FolderAnalysis("/Volumes/Guillaume/ChainFormation/2024-03-12_18h37m34s")
-    ana()
+    parent_folder = "/Volumes/Guillaume/ChainFormation"
+    folder_list = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder, f))]
+
+    pool = mp.Pool(mp.cpu_count() - 1)
+    res = pool.map(task, folder_list[0: 2])
+    pool.close()
+    # for f in folder_list[0: 2]:
+    #     task(f[0])

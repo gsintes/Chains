@@ -13,7 +13,7 @@ np.seterr(all='raise')
 
 class Analysis():
     """Class to perform the analysis of chain tracking data."""
-    def __init__(self, path) -> None:
+    def __init__(self, path: str) -> None:
         self.path = path
         self.bactLength = 10
         self.frameRate = self.read_frame_rate()
