@@ -37,7 +37,7 @@ class Analysis():
         df["time"] = df["imageNumber"] / self.frameRate 
 
         df["id"] = pd.to_numeric(df["id"], downcast="unsigned")
-        df["imageNumber"] = pd.to_numeric(df["imageNumber"], downcast="unsigned")
+        df["imageNumber"] = pd.to_numeric(df["imageNumber"], downcast="signed")
         df["xBody"] = pd.to_numeric(df["xBody"], downcast="float")
         df["yBody"] = pd.to_numeric(df["yBody"], downcast="float")
         df["time"] = pd.to_numeric(df["time"], downcast="float")
