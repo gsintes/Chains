@@ -261,6 +261,13 @@ class DistanceAnalyser:
         plt.savefig(file_name)
         plt.close()
 
+def task(folder, res_file, pair_distances, tracking_data, apparitions, i, j):
+    ana = DistanceAnalyser(folder, pair_distances, tracking_data, apparitions, i, j)
+    if ana.process():
+        with open(res_file, "a") as file:
+            f = folder.split("/")[-1]
+            file.write(f"{f},{int(ana.i)},{int(ana.j)},{int(ana.last_im)},0\n")
+                        
 def distance_analysis_folder(folder: str,
                              res_file: str,
                              pair_distances: pd.DataFrame,
@@ -268,12 +275,9 @@ def distance_analysis_folder(folder: str,
     """Run the analysis for the folder."""
     pairs = pair_distances.groupby(['i','j']).count().reset_index()[["i", "j"]]
     apparitions = get_apparition(tracking_data)
-    for pair in pairs.iterrows():
-                ana = DistanceAnalyser(folder, pair_distances, tracking_data, apparitions, pair[1].i, pair[1].j)
-                if ana.process():
-                    with open(res_file, "a") as file:
-                        f = folder.split("/")[-1]
-                        file.write(f"{f},{int(ana.i)},{int(ana.j)},{int(ana.last_im)},0\n")
+    args = [(folder, res_file, pair_distances, tracking_data, apparitions, pair[1].i, pair[1].j) for pair in pairs.iterrows()]
+    pool = mp.Pool(mp.cpu_count() -1)
+    pool.starmap_async(task, args)
 
 def main(parent_folder: str) -> None:
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
@@ -285,7 +289,7 @@ def main(parent_folder: str) -> None:
     res_file = os.path.join(parent_folder, "Potential_fusion.csv")
     with open(res_file, "w") as file:
         file.write("folder,i,j,last_im,checked\n")
-    for folder in folder_list:
+    for folder in folder_list[0:1]:
         fig_folder = os.path.join(folder, "Figure/Distance")
         try:
             os.makedirs(fig_folder)
