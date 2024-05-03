@@ -87,7 +87,7 @@ class Analysis():
             data = self.data.loc[self.data["id"] == id]
             mean_length = Analysis.detect_plateau_value(data["bodyMajorAxisLength"]) 
             nb_bact = np.rint(mean_length / self.bactLength)
-            self.data.loc[self.data["id"] == id, "bactNumber"] = nb_bact
+            self.data.loc[self.data["id"] == id, "chain_length"] = nb_bact
 
     def clean(self) -> None:
         """Clean the data by removing to short tracks."""
@@ -149,7 +149,7 @@ class Analysis():
         signs: List[int] = []
         for id in ids:
             data: pd.DataFrame = self.data.loc[self.data["id"] == id]
-            chain_length.append(int(min(data["bactNumber"])))
+            chain_length.append(int(min(data["chain_length"])))
             mean_vel.append(data["Velocity"].mean())
             signs.append(self.sign_trajectory(id))
         self.velocity_data = pd.DataFrame({"id": ids,
