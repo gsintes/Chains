@@ -289,7 +289,7 @@ def main(parent_folder: str) -> None:
     res_file = os.path.join(parent_folder, "Potential_fusion.csv")
     with open(res_file, "w") as file:
         file.write("folder,i,j,last_im,checked\n")
-    for folder in folder_list[0: 1]: 
+    for folder in folder_list: 
         fig_folder = os.path.join(folder, "Figure/Distance")
         try:
             os.makedirs(fig_folder)
