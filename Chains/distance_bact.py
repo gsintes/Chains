@@ -289,7 +289,7 @@ def main(parent_folder: str) -> None:
     res_file = os.path.join(parent_folder, "Potential_fusion.csv")
     with open(res_file, "w") as file:
         file.write("folder,i,j,last_im,checked\n")
-    for folder in folder_list: 
+    for folder in folder_list[0: 1]: 
         fig_folder = os.path.join(folder, "Figure/Distance")
         try:
             os.makedirs(fig_folder)
@@ -314,7 +314,5 @@ def main(parent_folder: str) -> None:
             file.write(f"{f} done at {datetime.now()}\n")
 
 if __name__=="__main__":
-    # parent_folder = "/Volumes/Guillaume/Chains/Chains 13.7%"
-    # main(parent_folder)
-    folder = "/Volumes/Guillaume/Chains/Chains 13.7%/2023-10-19_15h14m12s"
-    load_data(folder, 30)
+    parent_folder = "/Volumes/Guillaume/Chains/Chains 13.7%"
+    main(parent_folder)
