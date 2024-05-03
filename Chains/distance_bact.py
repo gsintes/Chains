@@ -43,6 +43,13 @@ def load_data(path: str, frame_rate: int) -> pd.DataFrame:
         con.close()
         df["time"] = df["imageNumber"] / frame_rate
 
+        df["id"] = pd.to_numeric(df["id"], downcast="unsigned")
+        df["imageNumber"] = pd.to_numeric(df["imageNumber"], downcast="unsigned")
+        df["xBody"] = pd.to_numeric(df["xBody"], downcast="float")
+        df["yBody"] = pd.to_numeric(df["yBody"], downcast="float")
+        df["time"] = pd.to_numeric(df["time"], downcast="float")
+        df["bodyMajorAxisLength"] = pd.to_numeric(df["bodyMajorAxisLength"], downcast="float")
+        
         if len(df.id.unique()) > 1:
             df = calculate_velocity(df)
             df = clean(df)

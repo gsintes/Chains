@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+import time
 np.seterr(all='raise')
 
 class Analysis():
@@ -32,7 +33,16 @@ class Analysis():
         con = sqlite3.connect(dbfile)
         df = pd.read_sql_query('SELECT xBody, yBody, bodyMajorAxisLength, imageNumber, id FROM tracking', con)
         con.close()
+
         df["time"] = df["imageNumber"] / self.frameRate 
+
+        df["id"] = pd.to_numeric(df["id"], downcast="unsigned")
+        df["imageNumber"] = pd.to_numeric(df["imageNumber"], downcast="unsigned")
+        df["xBody"] = pd.to_numeric(df["xBody"], downcast="float")
+        df["yBody"] = pd.to_numeric(df["yBody"], downcast="float")
+        df["time"] = pd.to_numeric(df["time"], downcast="float")
+        df["bodyMajorAxisLength"] = pd.to_numeric(df["bodyMajorAxisLength"], downcast="float")
+
         return df
 
     def calculate_velocity(self) -> None:

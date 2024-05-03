@@ -29,5 +29,5 @@ class FolderAnalysis(Analysis):
         
 
 if __name__=="__main__":
-    ana = FolderAnalysis("/Users/sintes/Desktop/NASGuillaume/ChainFormation/2024-03-12_18h37m34s")
+    ana = FolderAnalysis("/Volumes/Guillaume/ChainFormation/2024-03-12_18h37m34s")
     ana()
