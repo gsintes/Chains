@@ -30,9 +30,8 @@ class Analysis():
         """Load the data from the database."""
         dbfile = os.path.join(self.path, "Tracking_Result/tracking.db")
         con = sqlite3.connect(dbfile)
-        df = pd.read_sql_query('SELECT * FROM tracking', con)
+        df = pd.read_sql_query('SELECT xBody, yBody, bodyMajorAxisLength, imageNumber, id FROM tracking', con)
         con.close()
-        df = df[['xBody', 'yBody', 'tBody', 'bodyMajorAxisLength', 'bodyMinorAxisLength', 'imageNumber', 'id']]
         df["time"] = df["imageNumber"] / self.frameRate 
         return df
 
@@ -195,7 +194,7 @@ def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
 
 
 if __name__ == "__main__":
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 12%"
+    parent_folder = "/Volumes/Guillaume/Chains/Chains 12%"
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
     for folder in folder_list:
