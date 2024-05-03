@@ -91,17 +91,16 @@ class Analysis():
 
     def clean(self) -> None:
         """Clean the data by removing to short tracks."""
-        ids = self.data["id"].unique()
-        for id in ids:
-            length: float = self.bactLength * self.velocity_data.loc[self.velocity_data["id"] == id, "velocity"].mean() 
-            vel: float = self.scale * self.velocity_data.loc[self.velocity_data["id"] == id, "velocity"].mean() / self.frameRate #pix/frame
-            if vel < 0.2:
-                self.velocity_data: pd.DataFrame = self.velocity_data.drop(self.velocity_data[self.velocity_data["id"] == id].index)
-            else:
-                thresh = length / vel
-                len_track = len(self.data.loc[self.data["id"] == id])
-                if len_track < thresh:
-                    self.velocity_data = self.velocity_data.drop(self.velocity_data[self.velocity_data["id"] == id].index)
+        self.data.dropna(inplace=True)
+        grouped = self.data.groupby("id")
+        vel = self.scale * grouped["Velocity"].mean() / self.frameRate
+        count = self.data.id.value_counts()
+        self.data = self.data.set_index("id")
+        self.data["v"] = vel
+        self.data["l"] = count
+        self.data = self.data.reset_index()
+        self.data = self.data.drop(self.data[(self.data.v < 0.2) | (self.data.l < self.bactLength * self.frameRate / self.scale)].index)
+        self.data = self.data.drop(["v", "l"], axis=1)
 
     def trace_image(self) -> None:
         """Draw the image with superimposed trajectories."""
@@ -143,6 +142,7 @@ class Analysis():
         self.trace_image()
         self.calculate_velocity()
         self.calculate_chain_length()
+        self.clean()
         ids = self.data["id"].unique()
         chain_length: List[int] = []
         mean_vel: List[float] = []
@@ -156,7 +156,7 @@ class Analysis():
                              "chain_length": chain_length,
                              "velocity": mean_vel,
                              "sign": signs})
-        self.clean()
+        
         single_vel = self.velocity_data.loc[self.velocity_data["chain_length"] == 1, "velocity"].mean()
         self.velocity_data["Single_vel"] = single_vel
         self.velocity_data["Normalized_vel"] = self.velocity_data["velocity"] / single_vel

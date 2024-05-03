@@ -25,20 +25,6 @@ class FolderAnalysis(Analysis):
         else:
             self.time_duration = 0
             self.nb_time_inter = 0
- 
-    def clean(self) -> None:
-        """Clean the data"""
-        self.data.dropna(inplace=True)
-        grouped = self.data.groupby("id")
-        vel = self.scale * grouped["Velocity"].mean() / self.frameRate
-        count = self.data.id.value_counts()
-        self.data = self.data.set_index("id")
-        self.data["v"] = vel
-        self.data["l"] = count
-        self.data = self.data.reset_index()
-        self.data = self.data.drop(self.data[(self.data.v < 0.2) | (self.data.l < self.bactLength * self.frameRate / self.scale)].index)
-        self.data = self.data.drop(["v", "l"], axis=1)
-
 
     def group_by_time(self, time_begining: int, time_end: int) -> pd.DataFrame:
         """Group the data by time interval."""
