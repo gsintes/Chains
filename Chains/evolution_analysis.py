@@ -28,20 +28,17 @@ class FolderAnalysis(Analysis):
  
     def clean(self) -> None:
         """Clean the data"""
-        b = time.time()
-        ids = self.data["id"].unique()
-        for id in ids:
-            length: float = self.bactLength * self.data.loc[self.data["id"] == id, "Velocity"].mean() 
-            vel: float = self.scale * self.data.loc[self.data["id"] == id, "Velocity"].mean() / self.frameRate #pix/frame
-            if vel < 0.2:
-                self.velocity_data: pd.DataFrame = self.data.drop(self.data[self.data["id"] == id].index)
-            else:
-                thresh = length / vel
-                len_track = len(self.data.loc[self.data["id"] == id])
-                if len_track < thresh:
-                    self.data = self.data.drop(self.data[self.data["id"] == id].index)
-        e = time.time()
-        print(e-b)
+        self.data.dropna(inplace=True)
+        grouped = self.data.groupby("id")
+        vel = self.scale * grouped["Velocity"].mean() / self.frameRate
+        count = self.data.id.value_counts()
+        self.data = self.data.set_index("id")
+        self.data["v"] = vel
+        self.data["l"] = count
+        self.data = self.data.reset_index()
+        self.data = self.data.drop(self.data[(self.data.v < 0.2) | (self.data.l < self.bactLength * self.frameRate / self.scale)].index)
+        self.data = self.data.drop(["v", "l"], axis=1)
+
 
     def group_by_time(self, time_begining: int, time_end: int) -> pd.DataFrame:
         """Group the data by time interval."""
