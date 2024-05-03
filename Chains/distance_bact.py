@@ -104,12 +104,14 @@ class DistanceCalculator:
         ids = self.data.id.unique()
         ids.sort()
         res = []
-        for k, i in enumerate(ids):
-            for j in ids[k + 1:]:
-                dist = self.distance_pair(i, j)
-                for d in dist:
-                    res.append([i, j, d[0], d[1]])
-        if len(res) > 0:
+        pairs = [(i, j) for k, i in enumerate(ids) for j in ids[k + 1:]]
+        pool = mp.Pool(mp.cpu_count() -1)
+        result = pool.starmap_async(self.distance_pair, pairs)
+        res = []
+        for value in result.get():
+            if len(value) > 2 * FRAME_RATE:
+                res += value
+        if res:
             res = np.array(res)
             self.pair_distances = pd.DataFrame({
                 "i": res[:, 0],
@@ -117,30 +119,22 @@ class DistanceCalculator:
                 "im": res[:, 2],
                 "distance": res[:, 3]
             })
-        else:
-            self.pair_distances = pd.DataFrame()
-        self.pair_distances.dropna(inplace=True)
-        self.pair_distances.to_csv(os.path.join(self.path, "Tracking_Result/distances.csv"), index=False)
+            self.pair_distances.dropna(inplace=True)
+            self.pair_distances.to_csv(os.path.join(self.path, "Tracking_Result/distances.csv"), index=False)
 
     def distance_pair(self, i: int, j: int) -> List[Tuple[int, float]]:
         """Calculate the distance for all times """
-        data = self.data[self.data["id"]==i]
-        data = pd.concat((data, self.data[self.data["id"]==j]))
+        data = self.data[self.data["id"].isin((i, j))]
         images = list(data["imageNumber"].unique())
-        images.sort()
-        if len(images) > 2 * FRAME_RATE: 
-            images = images[: - 2 * FRAME_RATE]
-        else:
-            return []
         res = []
         for im in images:
             sub_data = data[data["imageNumber"]==im]
             if len(sub_data) == 2:
                 diff = sub_data.diff().dropna()
                 distance = np.sqrt(diff.xBody.max() ** 2 + diff.yBody.max() ** 2)
-                res.append((im, distance))
+                res.append((i, j, im, distance))
             elif len(sub_data) > 2:
-                raise ValueError()   
+                raise ValueError()
         return res
 
 class DistanceAnalyser:
@@ -316,5 +310,5 @@ def main(parent_folder: str) -> None:
             file.write(f"{f} done at {datetime.now()}\n")
 
 if __name__=="__main__":
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 13.7%"
+    parent_folder = "/Volumes/Guillaume/Chains/Chains 13.7%"
     main(parent_folder)
