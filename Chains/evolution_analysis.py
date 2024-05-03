@@ -28,7 +28,20 @@ class FolderAnalysis(Analysis):
  
     def clean(self) -> None:
         """Clean the data"""
-        pass #TODO implement
+        b = time.time()
+        ids = self.data["id"].unique()
+        for id in ids:
+            length: float = self.bactLength * self.data.loc[self.data["id"] == id, "Velocity"].mean() 
+            vel: float = self.scale * self.data.loc[self.data["id"] == id, "Velocity"].mean() / self.frameRate #pix/frame
+            if vel < 0.2:
+                self.velocity_data: pd.DataFrame = self.data.drop(self.data[self.data["id"] == id].index)
+            else:
+                thresh = length / vel
+                len_track = len(self.data.loc[self.data["id"] == id])
+                if len_track < thresh:
+                    self.data = self.data.drop(self.data[self.data["id"] == id].index)
+        e = time.time()
+        print(e-b)
 
     def group_by_time(self, time_begining: int, time_end: int) -> pd.DataFrame:
         """Group the data by time interval."""
@@ -70,8 +83,8 @@ if __name__=="__main__":
     parent_folder = "/Volumes/Guillaume/ChainFormation"
     folder_list = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder, f))]
 
-    pool = mp.Pool(mp.cpu_count() - 1)
-    res = pool.map(task, folder_list[0: 2])
-    pool.close()
-    # for f in folder_list[0: 2]:
-    #     task(f[0])
+    # pool = mp.Pool(mp.cpu_count() - 1)
+    # res = pool.map(task, folder_list)
+    # pool.close()
+
+    task(folder_list[0])
