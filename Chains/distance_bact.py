@@ -39,10 +39,10 @@ def load_data(path: str, frame_rate: int) -> pd.DataFrame:
         """Load the data from the database."""
         dbfile = os.path.join(path, "Tracking_Result/tracking.db")
         con = sqlite3.connect(dbfile)
-        df = pd.read_sql_query('SELECT * FROM tracking', con)
+        df = pd.read_sql_query('SELECT xBody, yBody, bodyMajorAxisLength, imageNumber, id FROM tracking', con)
         con.close()
-        df = df[['xBody', 'yBody', 'tBody', 'bodyMajorAxisLength', 'bodyMinorAxisLength', 'imageNumber', 'id']]
         df["time"] = df["imageNumber"] / frame_rate
+
         if len(df.id.unique()) > 1:
             df = calculate_velocity(df)
             df = clean(df)
@@ -289,7 +289,7 @@ def main(parent_folder: str) -> None:
     res_file = os.path.join(parent_folder, "Potential_fusion.csv")
     with open(res_file, "w") as file:
         file.write("folder,i,j,last_im,checked\n")
-    for folder in folder_list[0:1]:
+    for folder in folder_list: 
         fig_folder = os.path.join(folder, "Figure/Distance")
         try:
             os.makedirs(fig_folder)
@@ -314,5 +314,7 @@ def main(parent_folder: str) -> None:
             file.write(f"{f} done at {datetime.now()}\n")
 
 if __name__=="__main__":
-    parent_folder = "/Volumes/Guillaume/Chains/Chains 13.7%"
-    main(parent_folder)
+    # parent_folder = "/Volumes/Guillaume/Chains/Chains 13.7%"
+    # main(parent_folder)
+    folder = "/Volumes/Guillaume/Chains/Chains 13.7%/2023-10-19_15h14m12s"
+    load_data(folder, 30)
