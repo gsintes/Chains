@@ -8,7 +8,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-import time
 np.seterr(all='raise')
 
 class Analysis():
@@ -58,7 +57,7 @@ class Analysis():
                 
                 velocity = pos_diff / time_diff
                 self.data.loc[velocity.index, ax[0] + "Vel"] = velocity
-        self.data["Velocity"] = np.sqrt(self.data["xVel"] ** 2 + self.data["yVel"] ** 2)
+        self.data["velocity"] = np.sqrt(self.data["xVel"] ** 2 + self.data["yVel"] ** 2)
 
     @staticmethod   
     def detect_plateau_value(sequence: pd.Series):
@@ -89,18 +88,21 @@ class Analysis():
             nb_bact = np.rint(mean_length / self.bactLength)
             self.data.loc[self.data["id"] == id, "chain_length"] = nb_bact
 
-    def clean(self) -> None:
+    @staticmethod
+    def clean(data: pd.DataFrame, scale: float, frame_rate: int, bactLength: int=10) -> pd.DataFrame:
         """Clean the data by removing to short tracks."""
-        self.data.dropna(inplace=True)
-        grouped = self.data.groupby("id")
-        vel = self.scale * grouped["Velocity"].mean() / self.frameRate
-        count = self.data.id.value_counts()
-        self.data = self.data.set_index("id")
-        self.data["v"] = vel
-        self.data["l"] = count
-        self.data = self.data.reset_index()
-        self.data = self.data.drop(self.data[(self.data.v < 0.2) | (self.data.l < self.bactLength * self.frameRate / self.scale)].index)
-        self.data = self.data.drop(["v", "l"], axis=1)
+        data.dropna(inplace=True)
+        grouped = data.groupby("id")
+        vel = scale * grouped["velocity"].mean() / frame_rate
+        count = data.id.value_counts()
+        data = data.set_index("id")
+        data["v"] = vel
+        data["l"] = count
+        data = data.reset_index()
+        data = data.drop(data[(data.v < 0.2) |
+                                             (data.l < bactLength * frame_rate / scale)].index)
+        data = data.drop(["v", "l"], axis=1)
+        return data
 
     def trace_image(self) -> None:
         """Draw the image with superimposed trajectories."""
@@ -142,7 +144,7 @@ class Analysis():
         self.trace_image()
         self.calculate_velocity()
         self.calculate_chain_length()
-        self.clean()
+        Analysis.clean(self.data, self.scale, self.frameRate)
         ids = self.data["id"].unique()
         chain_length: List[int] = []
         mean_vel: List[float] = []
@@ -150,7 +152,7 @@ class Analysis():
         for id in ids:
             data: pd.DataFrame = self.data.loc[self.data["id"] == id]
             chain_length.append(int(min(data["chain_length"])))
-            mean_vel.append(data["Velocity"].mean())
+            mean_vel.append(data["velocity"].mean())
             signs.append(self.sign_trajectory(id))
         self.velocity_data = pd.DataFrame({"id": ids,
                              "chain_length": chain_length,
@@ -204,7 +206,7 @@ def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
 
 
 if __name__ == "__main__":
-    parent_folder = "/Volumes/Guillaume/Chains/Chains 12%"
+    parent_folder = "/Volumes/Guillaume/Chains/Chains 11%"
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
     for folder in folder_list:

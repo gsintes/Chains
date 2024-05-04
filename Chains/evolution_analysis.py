@@ -8,7 +8,6 @@ import pandas as pd
 from tracking_analysis import Analysis
 
 
-import time
 class EmptyDataError(Exception):
     def __init__(self, *args: object) -> None:
         super().__init__(*args)
@@ -57,7 +56,7 @@ class FolderAnalysis(Analysis):
                                               self.group_by_time(i * FolderAnalysis.time_interval, (i + 1) * FolderAnalysis.time_interval))
         self.grouped_data.to_csv(os.path.join(self.path, "grouped_data.csv"))
 
-def task(folder: str) -> int:
+def main(folder: str) -> int:
     ana = FolderAnalysis(folder)
     ana()
 
@@ -67,7 +66,7 @@ if __name__=="__main__":
     folder_list = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder, f))]
 
     # pool = mp.Pool(mp.cpu_count() - 1)
-    # res = pool.map(task, folder_list)
+    # res = pool.map(main, folder_list)
     # pool.close()
 
-    task(folder_list[0])
+    main(folder_list[0])

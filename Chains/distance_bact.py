@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
+from tracking_analysis import Analysis
+
 pd.options.mode.chained_assignment = None  # default='warn'
 BACTLENGTH = 10
 FRAME_RATE = 30
@@ -52,7 +54,7 @@ def load_data(path: str, frame_rate: int) -> pd.DataFrame:
 
         if len(df.id.unique()) > 1:
             df = calculate_velocity(df)
-            df = clean(df)
+            df = Analysis.clean(df, SCALE, FRAME_RATE)
             if len(df.id.unique()) > 1:
                 return df
         raise NotEnoughDataError("Need at least two differents chains.")
@@ -84,20 +86,7 @@ def get_apparition(data: pd.DataFrame) -> List[Tuple[int, int]]:
         res.append((int(id), int(sub_data.imageNumber.min())))
     return res
 
-def clean(data: pd.DataFrame) -> pd.DataFrame:
-    """Clean the data by removing to short tracks."""
-    ids = data["id"].unique()
-    for id in ids:
-        length: float = BACTLENGTH * data.loc[data["id"] == id, "Velocity"].mean() 
-        vel: float = SCALE * data.loc[data["id"] == id, "Velocity"].mean() / FRAME_RATE #pix/frame
-        if vel < 0.2:
-            data: pd.DataFrame = data.drop(data[data["id"] == id].index)
-        else:
-            thresh = length / vel
-            len_track = len(data.loc[data["id"] == id])
-            if len_track < thresh:
-                data = data.drop(data[data["id"] == id].index)
-    return data
+
 
 class DistanceCalculator:
     """Object to calculate distance between pairs of bacteria over time."""
