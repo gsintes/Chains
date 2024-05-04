@@ -49,12 +49,12 @@ class FolderAnalysis(Analysis):
             self.calculate_chain_length()
         
             self.data = self.data.drop(["xBody", "yBody", "bodyMajorAxisLength"], axis=1)
-            self.clean()
+            self.data = Analysis.clean(self.data, self.scale, self.frameRate)
             self.grouped_data = self.group_by_time(0, FolderAnalysis.time_interval)
             for i in range(1, self.nb_time_inter):
                 self.grouped_data = pd.concat(self.grouped_data,
                                               self.group_by_time(i * FolderAnalysis.time_interval, (i + 1) * FolderAnalysis.time_interval))
-        self.grouped_data.to_csv(os.path.join(self.path, "grouped_data.csv"))
+            self.grouped_data.to_csv(os.path.join(self.path, "grouped_data.csv"))
 
 def main(folder: str) -> int:
     ana = FolderAnalysis(folder)
