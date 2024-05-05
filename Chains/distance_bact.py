@@ -100,7 +100,11 @@ class DistanceCalculator:
         ids = self.data.id.unique()
         ids.sort()
         res = []
+        self.prop = 0
+        self.count = 0
         pairs = [(i, j) for k, i in enumerate(ids) for j in ids[k + 1:]]
+        self.len = len(pairs)
+        print(self.len)
         pool = mp.Pool(mp.cpu_count() -1)
         result = pool.starmap_async(self.distance_pair, pairs)
         res = []
@@ -131,6 +135,10 @@ class DistanceCalculator:
                 res.append((i, j, im, distance))
             elif len(sub_data) > 2:
                 raise ValueError()
+        self.count += 1
+        if self.count / self.prop > self.prop + 1:
+            self.prop +=1
+            print(self.prop)
         return res
 
 class DistanceAnalyser:
