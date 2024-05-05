@@ -65,8 +65,8 @@ if __name__=="__main__":
     parent_folder = "/Volumes/Guillaume/ChainFormation"
     folder_list = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder, f))]
 
-    # pool = mp.Pool(mp.cpu_count() - 1)
-    # res = pool.map(main, folder_list)
-    # pool.close()
+    pool = mp.Pool(mp.cpu_count() - 1)
+    res = pool.map(main, folder_list)
+    pool.close()
 
-    main(folder_list[0])
+    # main(folder_list[0])
