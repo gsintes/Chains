@@ -34,7 +34,7 @@ def calculate_velocity(data: pd.DataFrame) -> pd.DataFrame:
             time_diff = sub_data["time"].diff()
             velocity = pos_diff / time_diff
             data.loc[velocity.index, ax[0] + "Vel"] = velocity
-    data["Velocity"] = np.sqrt(data["xVel"] ** 2 + data["yVel"] ** 2)
+    data["velocity"] = np.sqrt(data["xVel"] ** 2 + data["yVel"] ** 2)
     return data
 
 def load_data(path: str, frame_rate: int) -> pd.DataFrame:
