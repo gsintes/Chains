@@ -6,6 +6,7 @@ from datetime import datetime
 import sqlite3
 from typing import List, Tuple
 import multiprocessing as mp
+from itertools import combinations
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,6 +14,8 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 
 from tracking_analysis import Analysis
+
+import time
 
 pd.options.mode.chained_assignment = None  # default='warn'
 BACTLENGTH = 10
@@ -91,7 +94,6 @@ def get_apparition(data: pd.DataFrame) -> List[Tuple[int, int]]:
 class DistanceCalculator:
     """Object to calculate distance between pairs of bacteria over time."""
     def __init__(self, path: str) -> None:
-
         self.path = path
         self.data = load_data(path, FRAME_RATE)
 
@@ -100,11 +102,12 @@ class DistanceCalculator:
         ids = self.data.id.unique()
         ids.sort()
         res = []
-        self.prop = 0
-        self.count = 0
-        pairs = [(i, j) for k, i in enumerate(ids) for j in ids[k + 1:]]
-        self.len = len(pairs)
-        print(self.len)
+        grouped = self.data.groupby("imageNumber")["id"].apply(lambda x:
+                                                               list(combinations(x.values,2))).apply(pd.Series).stack()\
+                                                                .reset_index(level=0,name='ids')
+        v_counts = grouped.ids.value_counts()
+        pairs = list(v_counts[v_counts > 2 * FRAME_RATE].index)
+
         pool = mp.Pool(mp.cpu_count() -1)
         result = pool.starmap_async(self.distance_pair, pairs)
         res = []
@@ -121,24 +124,23 @@ class DistanceCalculator:
             })
             self.pair_distances.dropna(inplace=True)
             self.pair_distances.to_csv(os.path.join(self.path, "Tracking_Result/distances.csv"), index=False)
-
+    
     def distance_pair(self, i: int, j: int) -> List[Tuple[int, float]]:
-        """Calculate the distance for all times """
+        """Calculate the distance for all times."""
         data = self.data[self.data["id"].isin((i, j))]
-        images = list(data["imageNumber"].unique())
+        grouped = data.groupby("imageNumber")
+        
+        grouped_data = pd.DataFrame()
+        grouped_data["nb"] = grouped.imageNumber.value_counts()
+        grouped_data = grouped_data[grouped_data.nb==2]
+        images = list(grouped_data.index)
         res = []
+
         for im in images:
             sub_data = data[data["imageNumber"]==im]
-            if len(sub_data) == 2:
-                diff = sub_data.diff().dropna()
-                distance = np.sqrt(diff.xBody.max() ** 2 + diff.yBody.max() ** 2)
-                res.append((i, j, im, distance))
-            elif len(sub_data) > 2:
-                raise ValueError()
-        self.count += 1
-        if self.count / self.prop > self.prop + 1:
-            self.prop +=1
-            print(self.prop)
+            diff = sub_data.diff().dropna()
+            distance = np.sqrt(diff.xBody.max() ** 2 + diff.yBody.max() ** 2)
+            res.append((i, j, im, distance))
         return res
 
 class DistanceAnalyser:
@@ -324,4 +326,8 @@ def main(parent_folder: str) -> None:
 
 if __name__=="__main__":
     parent_folder = "/Volumes/Guillaume/ChainFormation"
-    main(parent_folder)
+    # main(parent_folder)
+
+    folder = "/Users/sintes/Desktop/Test"
+    calculator = DistanceCalculator(folder)
+    calculator.distance_bacteria()
