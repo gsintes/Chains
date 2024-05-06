@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 import model
-from runSimulation import get_simu_data   
 
 def get_concentration(concentration_folder: str) -> float:
     """Get the concentration from the folder name."""
@@ -142,21 +141,13 @@ def plot_proportion_sign(data: pd.DataFrame, fig_folder: str) -> None:
 
 def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     """Generate the plots velocity vs chain length."""
-    # runner = RunnerModel(SimpleInteractionModel, 9)
-    # model_data = runner.run_serie()
-    simu_data, simu_norm_data = get_simu_data(data, from_data=True)
-
     plt.figure()
-    sns.pointplot(data=data, x="chain_length", y="velocity", linestyles="", errorbar="se", native_scale=True, c="k", label="Experiments")
-    sns.pointplot(data=simu_data.data, x="length", y="max_vel", linestyles="", errorbar="se", native_scale=True, label="Simulation")
-    plt.legend()
+    sns.pointplot(data=data, x="chain_length", y="velocity", linestyles="", errorbar="se", native_scale=True, c="k")
     plt.savefig(os.path.join(fig_folder,"errorbar_raw_All.png"))
     plt.close()
 
     plt.figure()
-    sns.pointplot(data=data, x="chain_length", y="Normalized_vel", linestyles="", errorbar="se", native_scale=True, c="k", label="Experiments")
-    sns.pointplot(data=simu_norm_data.data, x="length", y="max_vel", linestyles="", errorbar="se", native_scale=True, label="Simulation")
-    plt.legend()
+    sns.pointplot(data=data, x="chain_length", y="Normalized_vel", linestyles="", errorbar="se", native_scale=True, c="k")
     plt.xlabel("Chain length")
     plt.ylabel("$V / V_1$")
     plt.savefig(os.path.join(fig_folder,"errorbar_norm_All.png"))
@@ -165,7 +156,6 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
 
     plt.figure()
     sns.scatterplot(data=data, x="chain_length", y="Normalized_vel", hue="Concentration_LC")
-    sns.scatterplot(data=simu_norm_data.data, x="length", y="max_vel", label="Simulation")
     plt.legend(title="Concentration_LC")
     plt.savefig(os.path.join(fig_folder, "scatter_norm.png"))
     plt.close()
@@ -232,13 +222,6 @@ def sampling(data: pd.DataFrame, nb: int = 10) -> List[Tuple[str, int, int]]:
 
 def std_plot(data: pd.DataFrame, fig_folder: str) -> None:
     """Plot the standard deviation as a function of length."""
-    simu_data, _ = get_simu_data(data, from_data=True)
-    lengths_simu = simu_data.data.length.unique()
-    stds_simu_data = []
-    for l in lengths_simu:
-        sub_data = simu_data.data[simu_data.data.length==l]
-        stds_simu_data.append(sub_data.max_vel.std())
-
     lengths_exp = data.chain_length.unique()
     stds_exp = []
     for l in lengths_exp:
@@ -248,7 +231,6 @@ def std_plot(data: pd.DataFrame, fig_folder: str) -> None:
 
     plt.figure()
     plt.plot(lengths_exp, stds_exp, "s", label="Experiment")
-    plt.plot(lengths_simu, stds_simu_data, "o", label="Simulation data")
     plt.xlabel("Chain length")
     plt.ylabel("Standard deviation")
     plt.legend()
@@ -261,17 +243,9 @@ def sample_size_plot(data: pd.DataFrame, fig_folder: str) -> None:
     plt.figure()
     plt.plot(count, "o")
     plt.yscale("log")
-    # plt.show(block=True)
 
 def plot_min(data: pd.DataFrame, fig_folder: str) -> None:
     """Plot the min of the distribution with chain length."""
-    simu_data, _ = get_simu_data(data, from_data=True)
-    lengths_simu = simu_data.data.length.unique()
-    mins_simu_data: List[float] = []
-    for l in lengths_simu:
-        sub_data = simu_data.data[simu_data.data.length==l]
-        mins_simu_data.append(sub_data.max_vel.min())
-
     lengths_exp = data.chain_length.unique()
     mins_exp: List[float] = []
     for l in lengths_exp:
@@ -281,7 +255,6 @@ def plot_min(data: pd.DataFrame, fig_folder: str) -> None:
 
     plt.figure()
     plt.plot(lengths_exp, mins_exp, "s", label="Experiment")
-    plt.plot(lengths_simu, mins_simu_data, "o", label="Simulation data")
     plt.xlabel("Chain length")
     plt.ylabel("Minimum velocity")
     plt.legend()
@@ -290,13 +263,6 @@ def plot_min(data: pd.DataFrame, fig_folder: str) -> None:
 
 def plot_max(data: pd.DataFrame, fig_folder: str) -> None:
     """Plot the min of the distribution with chain length."""
-    simu_data, _ = get_simu_data(data, from_data=True)
-    lengths_simu = simu_data.data.length.unique()
-    maxs_simu_data: List[float] = []
-    for l in lengths_simu:
-        sub_data = simu_data.data[simu_data.data.length==l]
-        maxs_simu_data.append(sub_data.max_vel.max())
-
     lengths_exp = data.chain_length.unique()
     maxs_exp: List[float] = []
     for l in lengths_exp:
@@ -306,7 +272,6 @@ def plot_max(data: pd.DataFrame, fig_folder: str) -> None:
 
     plt.figure()
     plt.plot(lengths_exp, maxs_exp, "s", label="Experiment")
-    plt.plot(lengths_simu, maxs_simu_data, "o", label="Simulation data")
     plt.xlabel("Chain length")
     plt.ylabel("Maximum velocity")
     plt.legend()
@@ -322,7 +287,7 @@ def plot_force(data: pd.DataFrame, fig_folder: str) -> None:
     plt.close()
 
 if __name__ == "__main__":
-    parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains"
+    parent_folder = "/Volumes/Guillaume/Chains"
     fig_folder = os.path.join(parent_folder, "Figures")
     data = load_all_data(parent_folder)
 
