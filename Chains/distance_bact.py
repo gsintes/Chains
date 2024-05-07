@@ -103,7 +103,7 @@ class DistanceCalculator:
         ids.sort()
         self.save_file = os.path.join(self.path, "Tracking_Result/distances.csv")
         with open(self.save_file, "w") as f:
-            f.write("i,j,im,distance")
+            f.write("i,j,im,distance\n")
         grouped = self.data.groupby("imageNumber")["id"].apply(lambda x:
                                                                list(combinations(x.values,2))).apply(pd.Series).stack()\
                                                                 .reset_index(level=0,name='ids')
