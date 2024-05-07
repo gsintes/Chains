@@ -111,7 +111,7 @@ class DistanceCalculator:
         pairs = list(v_counts[v_counts > 2 * FRAME_RATE].index)
 
         pool = mp.Pool(mp.cpu_count() -1)
-        _ = pool.starmap(self.distance_pair, pairs[0:20])
+        _ = pool.starmap(self.distance_pair, pairs)
         
     def distance_pair(self, i: int, j: int) -> None:
         """Calculate the distance for all times."""
@@ -326,5 +326,9 @@ def main(parent_folder: str) -> None:
             file.write(f"{f} done at {datetime.now()}\n")
 
 if __name__=="__main__":
-    parent_folder = "/Volumes/Guillaume/ChainFormation"
-    main(parent_folder)
+    # parent_folder = "/Volumes/Guillaume/ChainFormation"
+    # main(parent_folder)
+
+    folder = "/Users/sintes/Desktop/Test"
+    calc = DistanceCalculator(folder)
+    calc.distance_bacteria()
