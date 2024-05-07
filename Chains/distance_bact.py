@@ -101,7 +101,9 @@ class DistanceCalculator:
         """Calculate the distance for all pairs of bacteria"""
         ids = self.data.id.unique()
         ids.sort()
-        res = []
+        self.save_file = os.path.join(self.path, "Tracking_Result/distances.csv")
+        with open(self.save_file, "w") as f:
+            f.write("i,j,im,distance")
         grouped = self.data.groupby("imageNumber")["id"].apply(lambda x:
                                                                list(combinations(x.values,2))).apply(pd.Series).stack()\
                                                                 .reset_index(level=0,name='ids')
@@ -109,23 +111,9 @@ class DistanceCalculator:
         pairs = list(v_counts[v_counts > 2 * FRAME_RATE].index)
 
         pool = mp.Pool(mp.cpu_count() -1)
-        result = pool.starmap_async(self.distance_pair, pairs)
-        res = []
-        for value in result.get():
-            if len(value) > 2 * FRAME_RATE:
-                res += value
-        if res:
-            res = np.array(res)
-            self.pair_distances = pd.DataFrame({
-                "i": res[:, 0],
-                "j": res[:, 1],
-                "im": res[:, 2],
-                "distance": res[:, 3]
-            })
-            self.pair_distances.dropna(inplace=True)
-            self.pair_distances.to_csv(os.path.join(self.path, "Tracking_Result/distances.csv"), index=False)
-    
-    def distance_pair(self, i: int, j: int) -> List[Tuple[int, float]]:
+        _ = pool.starmap(self.distance_pair, pairs[0:20])
+        
+    def distance_pair(self, i: int, j: int) -> None:
         """Calculate the distance for all times."""
         data = self.data[self.data["id"].isin((i, j))]
         grouped = data.groupby("imageNumber")
@@ -134,14 +122,18 @@ class DistanceCalculator:
         grouped_data["nb"] = grouped.imageNumber.value_counts()
         grouped_data = grouped_data[grouped_data.nb==2]
         images = list(grouped_data.index)
+        images.sort(reverse=True)
         res = []
 
-        for im in images:
+        for im in images[0:60]:
             sub_data = data[data["imageNumber"]==im]
             diff = sub_data.diff().dropna()
             distance = np.sqrt(diff.xBody.max() ** 2 + diff.yBody.max() ** 2)
+
             res.append((i, j, im, distance))
-        return res
+        with open(self.save_file, "a") as f:
+            for r in res:
+                f.write(f"{r[0]},{r[1]},{r[2]},{r[3]:.1f}\n")
 
 class DistanceAnalyser:
     """Analyse the distance between to objects"""
@@ -285,6 +277,15 @@ def distance_analysis_folder(folder: str,
     pool = mp.Pool(mp.cpu_count() -1)
     pool.starmap_async(task, args)
 
+def read_pair_distances(folder: str) -> pd.DataFrame:
+    """Read the pair distances and reduce the type of data to reduce memory usage."""
+    data = pd.read_csv(os.path.join(folder, "Tracking_Result/distances.csv"))
+    data["i"] = pd.to_numeric(data["i"], downcast="unsigned")
+    data["j"] = pd.to_numeric(data["j"], downcast="unsigned")
+    data["im"] = pd.to_numeric(data["im"], downcast="signed")
+    data["distance"] = pd.to_numeric(data["distance"], downcast="float")
+    return data
+
 def main(parent_folder: str) -> None:
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     folder_list.sort()
@@ -306,13 +307,13 @@ def main(parent_folder: str) -> None:
         try:
             tracking_data = load_data(folder, 30)
             try:
-                pair_distances = pd.read_csv(os.path.join(folder, "Tracking_Result/distances.csv"))
+                pair_distances = read_pair_distances(folder)
                 print("Read data distance")
             except (FileNotFoundError, OSError, pd.errors.EmptyDataError):
                 print("Calculating distance")
                 calculator = DistanceCalculator(folder)
                 calculator.distance_bacteria()
-                pair_distances = calculator.pair_distances
+                pair_distances = read_pair_distances(folder)
                 tracking_data = calculator.data
                 print("Finished calculation")
             if not pair_distances.empty:
@@ -326,8 +327,4 @@ def main(parent_folder: str) -> None:
 
 if __name__=="__main__":
     parent_folder = "/Volumes/Guillaume/ChainFormation"
-    # main(parent_folder)
-
-    folder = "/Users/sintes/Desktop/Test"
-    calculator = DistanceCalculator(folder)
-    calculator.distance_bacteria()
+    main(parent_folder)
