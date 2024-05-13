@@ -1,12 +1,13 @@
 """Tracker based on Kalman filters."""
-
-from typing import List, Dict
+import os
+from typing import List, Dict, Union
 
 import numpy as np
 import cv2
 from scipy.optimize import linear_sum_assignment
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
+import matplotlib.colors as mcolors
 
 from base_detector import BaseDetector
 
@@ -40,7 +41,7 @@ class Particle:
         self._kf.predict()
         return self._kf.x
 
-    def update(self, measure: np.ndarray) -> None:
+    def update(self, measure: Union[None, np.ndarray]) -> None:
         """Predict the position."""
         self._kf.update(measure)
 
@@ -173,11 +174,12 @@ class ObjectTracker:
             self.update(current_detection, order)
             self.clean(losts)
             self.im += 1
+            tracking_data = [part.attributes for i, part in enumerate(self.particles) if i not in losts]
             if self.visualization:
-                self.make_verif_image(image)
+                self.make_verif_image(image, tracking_data)
             self.count += 1
 
-            return [part.attributes for i, part in enumerate(self.particles) if i not in losts]
+            return tracking_data
         return []
 
     def assign(self, current_detection: List[Dict[str, float]]) -> List[int]:
@@ -298,4 +300,27 @@ class ObjectTracker:
             if self.particles[i].skip_count > self.params["maxTime"]:
                 self.particles.pop(i)
 
+    @staticmethod
+    def hex_to_rgb(value):
+        """Transform an hexadecimal image in RGB"""
+        value = value.lstrip('#')
+        lv = len(value)
+        return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
 
+    def make_verif_image(self, image: np.ndarray, tracking_data: List[Dict[str, float]]) -> None:
+        """Make a image showing the detection."""
+        colors = [ObjectTracker.hex_to_rgb(color) for color in mcolors.TABLEAU_COLORS.values()]
+        image_to_draw = cv2.merge([image, image, image])
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        for attributes in tracking_data:
+            color = colors[int(attributes["id"]) % len(colors)]
+            center = (int(attributes["xcenter"]), int(attributes["ycenter"]))
+            center_writing = (int(attributes["xcenter"]),
+                            int(attributes["ycenter"] + attributes["major_axis"]))
+            image_to_draw = cv2.ellipse(img=image_to_draw,
+                                center=center,
+                                axes=(int(attributes["major_axis"]), int(attributes["minor_axis"])),
+                                angle=180 * (1 - attributes["orientation"] / np.pi), startAngle=0, endAngle=360,
+                                color=color, thickness=1)
+            image_to_draw = cv2.putText(image_to_draw, str(attributes["id"]), org=center_writing, fontFace=font, fontScale=1, color=color)
+        cv2.imwrite(os.path.join(self.save_folder, f"tracked{self.count:06d}.png"), image_to_draw)
