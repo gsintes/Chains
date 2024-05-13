@@ -4,7 +4,6 @@ from typing import List, Dict, Union
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
-from nptyping import NDArray, Float, Shape
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
 
@@ -15,48 +14,46 @@ class Particle:
     """A particle is an object tracked in the image."""
     def __init__(self, id: int):
         self.is_init = False
-        self.id = id 
+        self.id = id
         self.attributes: Dict[str, Union[float, int]] = {}
 
-        self._KF = KalmanFilter(4, 2)
-        self._KF.F = np.array([[1., 0., 1., 0.],
+        self._kf = KalmanFilter(4, 2)
+        self._kf.F = np.array([[1., 0., 1., 0.],
                               [0., 1., 0., 1.],
                               [0., 0., 1., 0.],
                               [0., 0., 0., 1.]])
-        self._KF.H = np.array([[1., 0., 0., 0.],
+        self._kf.H = np.array([[1., 0., 0., 0.],
                               [0., 1., 0., 0.]])
-        self._KF.P *= 1000. #TODO fix value for the 3 next param
-        self._KF.R = [[2, 2]] # Error in estimate
-        self._KF.Q = Q_discrete_white_noise(dim=4, dt=0.1, var=0.13)
+        self._kf.P *= 1000. #TODO fix value for the 3 next param
+        self._kf.R = [[2, 2]] # Error in estimate
+        self._kf.Q = Q_discrete_white_noise(dim=4, dt=0.1, var=0.13)
+        self.skip_count = 0
 
-        self.skip_count = 0 
-        self.line = [] 
-
-    def init_filter(self, state: NDArray[Shape[4, Float]]) -> None:
+    def init_filter(self, state: np.ndarray) -> None:
         """Initialise the filter."""
         self.is_init = True
-        self._KF.x = state
+        self._kf.x = state
 
-    def predict(self) -> NDArray[Shape[4, Float]]:
+    def predict(self) -> np.ndarray:
         """Predict the position."""
-        self._KF.predict()
-        return self._KF.x
-    
-    def update(self, measure: NDArray[Shape[2, Float]]) -> None:
-        """Predict the position."""
-        self._KF.update(measure)
+        self._kf.predict()
+        return self._kf.x
 
-    def update_attributes(self, detection: Dict[str, Union[float, int]]) -> None:
+    def update(self, measure: np.ndarray) -> None:
+        """Predict the position."""
+        self._kf.update(measure)
+
+    def update_attributes(self, detection: Dict[str, Union[float, int]], time: int) -> None:
         """Update the attributes based on the detection."""
         self.attributes = detection
-        
-class ObjectTracker(object):
+        self.attributes["time"] = time
+        self.attributes["id"] = self.id
+
+class ObjectTracker:
     """Track the objects in a video and solve the assignment issue."""
-    def __init__(self, params: Dict[str, float]= {},save_folder: str = "", visualization: bool = True):
+    def __init__(self, save_folder: str = "", visualization: bool = True):
         self.particles: List[Particle] = []
         self.max_id = 0
-        if params:
-            self.params = params.copy()
         self.is_init = False
         self.save_folder = save_folder
         self.count = 0
@@ -86,8 +83,8 @@ class ObjectTracker(object):
         self.detector = detector
         self.is_init = False
 
-    def initialize(self, image1: np.ndarray, image2: np.ndarray) -> None:
-        """Initialize the tracker on two first images.
+    def initialize(self, image1: np.ndarray) -> None:
+        """Initialize the tracker on the first images.
 
         Parameters
         ----------
@@ -108,9 +105,7 @@ class ObjectTracker(object):
             self.im = 0
             for detec in self.prev_detection:
                 particle = Particle(self.max_id)
-                particle.update_attributes(detec)
-                particle.attributes["time"] = self.im
-                particle.attributes["id"] = particle.id
+                particle.update_attributes(detec, self.im)
                 self.particles.append(particle)
                 
                 self.max_id += 1
@@ -133,9 +128,8 @@ class ObjectTracker(object):
 
         """
         if b != 0:
-            return a/b
-        else:
-            return 0
+            return a/b    
+        return 0
     
     @staticmethod
     def angle_difference(a: float, b: float) -> float:
@@ -195,19 +189,13 @@ class ObjectTracker(object):
         """
         if self.is_init:
             self.current_detection = self.detector.process(image)
-            order = self.assign(self.prev_detection, self.current_detection)
+            order = self.assign()
             losts = self.find_lost(order)
-            self.current_detection = self.reassign(self.prev_detection,
-                                                   self.current_detection, order)
-            while len(self.current_detection) - len(self.id) != 0:
-                self.max_id += 1
-                self.id.append(self.max_id)
-                self.lost.append(0)
+            self.update(order)
+
             self.current, self.lost, self.id = self.clean(
                 self.current_detection, self.lost, losts, self.id)
-            for i, j in enumerate(self.current_detection):
-                j["time"] = self.im
-                j["id"] = self.id[i]
+
             self.im += 1
             self.prev_detection = self.current_detection
             self.lost_ids = losts
@@ -215,7 +203,7 @@ class ObjectTracker(object):
                 self.make_verif_image(image)
             self.count += 1
             
-            return [j for i, j in enumerate(self.current_detection) if i not in losts]
+            return [part.attributes for i, part in enumerate(self.particles) if i not in losts]
         return []
 
     def assign(self) -> List[int]:
@@ -257,7 +245,7 @@ class ObjectTracker(object):
             row, col = linear_sum_assignment(cost)
 
             assignment = []
-            for i, _ in enumerate(self.prev_detection):
+            for i, _ in enumerate(self.particles):
                 if i in row and (i, col[list(row).index(i)]) in valid:
                     assignment.append(col[list(row).index(i)])
                 else:
@@ -281,18 +269,11 @@ class ObjectTracker(object):
         """
         return [i for i, j in enumerate(assignment) if j == -1]
     
-    def reassign(self,
-                 past: List[Dict[str, Union[int, float]]],
-                 current: List[Dict[str, Union[int, float]]],
-                 order: List[int]) -> List[Dict[str, Union[int, float]]]:
+    def update(self, order: List[int]) -> None:
         """Reassign current based on order.
 
         Parameters
-        ----------
-        prev : list
-            List of dict of previous detections.
-        current : list
-            List of dict of current detections.
+        ---------
         order : list
             Reassingment
 
@@ -302,43 +283,55 @@ class ObjectTracker(object):
             Reordered current.
 
         """
-        tmp = past
-        for i, j in enumerate(past):
+        for i, part in enumerate(self.particles):
             if order[i] != -1:
-                tmp[i] = current[order[i]]
+                part.attributes["time"] = self.im
+                x = self.current_detection[order[i]]["xcenter"]
+                y = self.current_detection[order[i]]["xcenter"]
+                part.update_attributes(self.current_detection[order[i]], self.im)
+                if part.is_init:
+                    part.update(np.array([x, y]))
+                else:
+                    part.is_init = True
+                    x_v = x - part.attributes["xcenter"]
+                    y_v = x - part.attributes["ycenter"]
+                    part.init_filter(np.array([x, y, x_v, y_v]))
 
-        for i, j in enumerate(current):
+        for i, curr in enumerate(self.current_detection):
             if i not in order:
-                tmp.append(j)
+                part = Particle(self.max_id)
+                self.max_id += 1
+                part.update_attributes(curr, self.im)
+                self.particles.append(part)
+                
 
-        return tmp
 
-    def update(self, detections):
-        """Update the tracking."""
+    # def update(self, detections):
+    #     """Update the tracking."""
 
-        del_objects = []
-        for i in range(len(self.particles)):
-            if (self.particles[i].skip_count > self.params["max_skip"]):
-                del_objects.append(i)
+    #     del_objects = []
+    #     for i in range(len(self.particles)):
+    #         if (self.particles[i].skip_count > self.params["max_skip"]):
+    #             del_objects.append(i)
 
-        if del_objects: # TODO check
-            for id in del_objects:
-                if id < len(self.particles):
-                    del self.particles[id]
-                    del assign[id]         
+    #     if del_objects:
+    #         for id in del_objects:
+    #             if id < len(self.particles):
+    #                 del self.particles[id]
+    #                 del assign[id]         
 
-        for i in range(len(detections)):
-                if i not in assign:
-                    self.particles.append(Particle(detections[i], self.object_id))
-                    self.object_id += 1
+    #     for i in range(len(detections)):
+    #             if i not in assign:
+    #                 self.particles.append(Particle(detections[i], self.object_id))
+    #                 self.object_id += 1
 
 
                 
-        for i in range(len(assign)):
-            self.particles[i]._KF.predict()
+    #     for i in range(len(assign)):
+    #         self.particles[i]._kf.predict()
 
-            if(assign[i] != -1):
-                self.particles[i].skip_count = 0
-                self.particles[i].prediction = self.particles[i]._KF.update(detections[assign[i]])
-            else:
-                self.particles[i].prediction = self.particles[i]._KF.update( np.array([[0], [0]]))
+    #         if(assign[i] != -1):
+    #             self.particles[i].skip_count = 0
+    #             self.particles[i].prediction = self.particles[i]._kf.update(detections[assign[i]])
+    #         else:
+    #             self.particles[i].prediction = self.particles[i]._kf.update( np.array([[0], [0]]))
