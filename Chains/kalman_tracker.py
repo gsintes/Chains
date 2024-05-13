@@ -3,6 +3,7 @@
 from typing import List, Dict
 
 import numpy as np
+import cv2
 from scipy.optimize import linear_sum_assignment
 from filterpy.kalman import KalmanFilter
 from filterpy.common import Q_discrete_white_noise
@@ -170,9 +171,7 @@ class ObjectTracker:
             order = self.assign(current_detection)
             losts = self.find_lost(order)
             self.update(current_detection, order)
-
-            self.clean(current_detection,  losts)
-
+            self.clean(losts)
             self.im += 1
             if self.visualization:
                 self.make_verif_image(image)
@@ -188,9 +187,9 @@ class ObjectTracker:
         list
             Assignment.
         """
-        if len(self.particles) == 0:
+        if not self.particles:
             assignment: List[int] = []
-        elif len(current_detection) == 0:
+        elif not current_detection:
             assignment = [-1] * len(self.particles)
         else:
             cost = np.zeros((len(self.particles), len(current_detection)))
@@ -284,30 +283,19 @@ class ObjectTracker:
                 part.update_attributes(curr, self.im)
                 self.particles.append(part)
 
-    # def update(self, detections):
-    #     """Update the tracking."""
+    def clean(self, lost: List[int]) -> None:
+        """Delete objects that were lost.
+        Only counter is copied in this function. Other lists act as pointer.
 
-    #     del_objects = []
-    #     for i in range(len(self.particles)):
-    #         if (self.particles[i].skip_count > self.params["max_skip"]):
-    #             del_objects.append(i)
-
-    #     if del_objects:
-    #         for id in del_objects:
-    #             if id < len(self.particles):
-    #                 del self.particles[id]
-    #                 del assign[id]
-
-    #     for i in range(len(detections)):
-    #             if i not in assign:
-    #                 self.particles.append(Particle(detections[i], self.object_id))
-    #                 self.object_id += 1
+        Parameters
+        ----------
+        lost : list
+            Lost objects.
+        """
+        for i in lost:
+            self.particles[i].skip_count += 1
+            self.particles[i].update(None)
+            if self.particles[i].skip_count > self.params["maxTime"]:
+                self.particles.pop(i)
 
 
-
-    #     for i in range(len(assign)):
-    #         self.particles[i]._kf.predict()
-
-    #         if(assign[i] != -1):
-    #         else:
-    #             self.particles[i].prediction = self.particles[i]._kf.update( np.array([[0], [0]]))

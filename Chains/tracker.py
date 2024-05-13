@@ -118,7 +118,7 @@ class Tracker():
             if self.visualization:
                 self.make_verif_image(image)
             self.count += 1
-            
+
             return [j for i, j in enumerate(self.current_detection) if i not in losts]
         return []
 
@@ -327,7 +327,7 @@ class Tracker():
             counter.pop(i)
             idty.pop(i)
         return current, counter, idty
-    
+
     @staticmethod
     def hex_to_rgb(value):
         value = value.lstrip('#')
