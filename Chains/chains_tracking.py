@@ -8,7 +8,7 @@ from datetime import datetime
 import cv2
 
 from chains_detector import ChainDetector
-from tracker import Tracker
+from kalman_tracker import ObjectTracker
 from data import Result
 import data as dat
 import preprocessing
@@ -63,9 +63,7 @@ def main(folder_path: str) -> str:
 
 
     # Set up tracker
-    tracker = Tracker(params, tracked_path)
-    tracker.set_params(params)
-    tracker.set_detector(detector)
+    tracker = ObjectTracker(params, detector, tracked_path)
 
     im_data = tracker.initialize(preprocessing.convert_16to8bits(image_list[0], max_int))
     saver.add_data(im_data)
