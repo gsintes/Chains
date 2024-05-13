@@ -61,13 +61,12 @@ class ObjectTracker:
         self.max_id = 0
         self.is_init = False
         self.save_folder = save_folder
-        self.count = 0
         self.visualization = visualization
         self.detector = detector
         self.im = 0
 
 
-    def initialize(self, image1: np.ndarray) -> None:
+    def initialize(self, image: np.ndarray) -> List[Dict[str, float]]:
         """Initialize the tracker on the first images.
 
         Parameters
@@ -83,12 +82,18 @@ class ObjectTracker:
         """
         if self.params and self.detector:
             self.is_init = True
-            detection = self.detector.process(image1)
+            detection = self.detector.process(image)
+            print(len(detection))
             for detec in detection:
                 particle = Particle(self.max_id)
                 particle.update_attributes(detec, self.im)
                 self.particles.append(particle)
                 self.max_id += 1
+            data = [part.attributes for part in self.particles]
+            if self.visualization:
+                self.make_verif_image(image, data)
+            return data
+        return []
 
     @staticmethod
     def div(a: float, b: float) -> float:
@@ -177,7 +182,6 @@ class ObjectTracker:
             tracking_data = [part.attributes for i, part in enumerate(self.particles) if i not in losts]
             if self.visualization:
                 self.make_verif_image(image, tracking_data)
-            self.count += 1
 
             return tracking_data
         return []
@@ -323,4 +327,4 @@ class ObjectTracker:
                                 angle=180 * (1 - attributes["orientation"] / np.pi), startAngle=0, endAngle=360,
                                 color=color, thickness=1)
             image_to_draw = cv2.putText(image_to_draw, str(attributes["id"]), org=center_writing, fontFace=font, fontScale=1, color=color)
-        cv2.imwrite(os.path.join(self.save_folder, f"tracked{self.count:06d}.png"), image_to_draw)
+        cv2.imwrite(os.path.join(self.save_folder, f"tracked{self.im:06d}.png"), image_to_draw)
