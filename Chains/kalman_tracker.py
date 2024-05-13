@@ -14,23 +14,37 @@ from base_detector import BaseDetector
 class Particle:
     """A particle is an object tracked in the image."""
     def __init__(self, id: int):
-        
+        self.is_init = False
         self.object_id = id 
-        self.attributes: Dict[str, float] = {}
+        self.attributes: Dict[str, Union[float, int]] = {}
 
-        self.KF = KalmanFilter(4, 2)
-        self.KF.F = np.array([[1., 0., 1., 0.],
+        self._KF = KalmanFilter(4, 2)
+        self._KF.F = np.array([[1., 0., 1., 0.],
                               [0., 1., 0., 1.],
                               [0., 0., 1., 0.],
                               [0., 0., 0., 1.]])
-        self.KF.H = np.array([[1., 0., 0., 0.],
+        self._KF.H = np.array([[1., 0., 0., 0.],
                               [0., 1., 0., 0.]])
-        self.KF.P *= 1000. #TODO fix value for the 3 next param
-        self.KF.R = [[2, 2]] # Error in estimate
-        self.KF.Q = Q_discrete_white_noise(dim=4, dt=0.1, var=0.13)
+        self._KF.P *= 1000. #TODO fix value for the 3 next param
+        self._KF.R = [[2, 2]] # Error in estimate
+        self._KF.Q = Q_discrete_white_noise(dim=4, dt=0.1, var=0.13)
 
         self.skip_count = 0 
         self.line = [] 
+
+    def init_filter(self, state: NDArray[Shape[4, Float]]) -> None:
+        """Initialise the filter."""
+        self.is_init = True
+        self._KF.x = state
+
+    def predict(self) -> NDArray[Shape[4, Float]]:
+        """Predict the position."""
+        self._KF.predict()
+        return self._KF.x
+    
+    def update(self, measure: NDArray[Shape[2, Float]]) -> None:
+        """Predict the position."""
+        self._KF.update(measure)
 
     def update_attributes(self, detection: Dict[str, Union[float, int]]) -> None:
         """Update the attributes based on the detection."""
@@ -95,8 +109,6 @@ class ObjectTracker(object):
                 self.objects.append(particle)
                 
                 self.object_id += 1
-            return self.prev_detection
-        return []
 
     @staticmethod
     def div(a: float, b: float) -> float:
@@ -212,10 +224,10 @@ class ObjectTracker(object):
 
                 
         for i in range(len(assign)):
-            self.objects[i].KF.predict()
+            self.objects[i]._KF.predict()
 
             if(assign[i] != -1):
                 self.objects[i].skip_count = 0
-                self.objects[i].prediction = self.objects[i].KF.update(detections[assign[i]])
+                self.objects[i].prediction = self.objects[i]._KF.update(detections[assign[i]])
             else:
-                self.objects[i].prediction = self.objects[i].KF.update( np.array([[0], [0]]))
+                self.objects[i].prediction = self.objects[i]._KF.update( np.array([[0], [0]]))
