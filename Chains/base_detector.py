@@ -55,8 +55,8 @@ class BaseDetector(metaclass=abc.ABCMeta):
                 contours[0])
             body["perim"] = cv2.arcLength(contours[0], True)
 
-            body["center"][0] += coordinate[0]
-            body["center"][1] += coordinate[1]
+            body["xcenter"] += coordinate[0]
+            body["ycenter"] += coordinate[1]
             detections.append(body)
         return detections
 
@@ -93,7 +93,7 @@ class BaseDetector(metaclass=abc.ABCMeta):
             np.sqrt((((i + k) - np.sqrt((i - k) * (i - k) + 4 * j * j))
                     * 0.5) / moments["m00"])
 
-        return {"center": [x, y], "orientation": orientation, "major_axis": maj_axis, "minor_axis": min_axis}
+        return {"xcenter": x, "ycenter": y, "orientation": orientation, "major_axis": maj_axis, "minor_axis": min_axis}
 
     @staticmethod
     def modulo(angle: float) -> float:

@@ -10,6 +10,7 @@ from filterpy.common import Q_discrete_white_noise
 
 from base_detector import BaseDetector
 
+
 class Particle:
     """A particle is an object tracked in the image."""
     def __init__(self, id: int):
@@ -71,8 +72,8 @@ class ObjectTracker(object):
         self.detector = detector
         self.is_init = False
 
-    def initialize(self, image: np.ndarray) -> List[Dict[str, Dict[str, Any]]]:
-        """Initialize the tracker.
+    def initialize(self, image1: np.ndarray, image2: np.ndarray) -> None:
+        """Initialize the tracker on two first images.
 
         Parameters
         ----------
@@ -86,11 +87,11 @@ class ObjectTracker(object):
 
         """
         if self.params and self.detector:
-            detection = self.detector.process(image)
-            for i in range(len(detection)):
+            detection = self.detector.process(image1)
+            for detec in detection:
                 
                 particle = Particle(self.object_id)
-                particle
+                particle.update_attributes(detec)
                 self.objects.append(particle)
                 
                 self.object_id += 1

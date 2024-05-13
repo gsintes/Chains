@@ -122,7 +122,7 @@ class Result():
             cursor.execute("INSERT INTO tracking (xBody, yBody, tBody, areaBody,"
                            "perimeterBody, bodyMajorAxisLength, bodyMinorAxisLength, bodyExcentricity,"
                            "imageNumber, id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ",
-                           (data["center"][0], data["center"][1], data["orientation"],
+                           (data["xcenter"], data["ycenter"], data["orientation"],
                             data["area"], data["perim"],
                             data["major_axis"], data["minor_axis"],
                             np.sqrt(1 - (data["minor_axis"] / data["major_axis"]) ** 2),

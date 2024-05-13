@@ -1,6 +1,6 @@
 """Tracker tools for assignement of object between current and previous objects."""
 
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Tuple, Union
 import os
 
 import numpy as np
@@ -55,7 +55,7 @@ class Tracker():
         self.detector = detector
         self.is_init = False
 
-    def initialize(self, image: np.ndarray) -> List[Dict[str, Dict[str, Any]]]:
+    def initialize(self, image: np.ndarray) -> List[Dict[str, Union[int, float]]]:
         """Initialize the tracker.
 
         Parameters
@@ -83,7 +83,7 @@ class Tracker():
             return self.prev_detection
         return []
 
-    def process(self, image: np.ndarray) -> List[Dict[str, Dict[str, Any]]]:
+    def process(self, image: np.ndarray) -> List[Dict[str, Union[int, float]]]:
         """Process an image.
 
         Parameters
@@ -187,8 +187,8 @@ class Tracker():
         return cost
 
     def assign(self,
-               prev: List[Dict[str, Dict[str, Any]]],
-               current: List[Dict[str, Dict[str, Any]]]) -> List[int]:
+               prev: List[Dict[str, Union[int, float]]],
+               current: List[Dict[str, Union[int, float]]]) -> List[int]:
         """Find the optimal assignent.
 
         Parameters
@@ -218,8 +218,8 @@ class Tracker():
             for i, prev_coord in enumerate(prev):
                 
                 for j, current_coord in enumerate(current):
-                    distance = np.sqrt((prev_coord["center"][0] - current_coord["center"][0]) ** 2 + (
-                        prev_coord["center"][1] - current_coord["center"][1]) ** 2)
+                    distance = np.sqrt((prev_coord["xcenter"] - current_coord["xcenter"]) ** 2 + (
+                        prev_coord["ycenter"] - current_coord["ycenter"]) ** 2)
                     angle = np.abs(self.angle_difference(
                         prev_coord["orientation"], current_coord["orientation"]))
                     area = np.abs(prev_coord["area"] - current_coord["area"])
@@ -244,9 +244,9 @@ class Tracker():
         return assignment
 
     def reassign(self,
-                 past: List[Dict[str, Dict[str, Any]]],
-                 current: List[Dict[str, Dict[str, Any]]],
-                 order: List[int]) -> List[Dict[str, Dict[str, Any]]]:
+                 past: List[Dict[str, Union[int, float]]],
+                 current: List[Dict[str, Union[int, float]]],
+                 order: List[int]) -> List[Dict[str, Union[int, float]]]:
         """Reassign current based on order.
 
         Parameters
@@ -292,10 +292,10 @@ class Tracker():
         return [i for i, j in enumerate(assignment) if j == -1]
 
     def clean(self,
-              current: List[Dict[str, Dict[str, Any]]],
+              current: List[Dict[str, Union[int, float]]],
               counter: List[int],
               lost: List[int],
-              idty: List[int]) -> Tuple[List[Dict[str, Dict[str, Any]]], List[int], List[int]]:
+              idty: List[int]) -> Tuple[List[Dict[str, Union[int, float]]], List[int], List[int]]:
         """Delete objects that were lost.
         Only counter is copied in this function. Other lists act as pointer.
 
@@ -340,12 +340,12 @@ class Tracker():
         image_to_draw = cv2.merge([image, image, image])
         font = cv2.FONT_HERSHEY_SIMPLEX
         for body_features in self.current_detection:
-            id_obj = body_features["id"]
+            id_obj = int(body_features["id"])
             if id_obj not in self.lost_ids:
                 color = colors[id_obj % len(colors)]
-                center = (int(body_features["center"][0]), int(body_features["center"][1]))
-                center_writing = (int(body_features["center"][0]),
-                                int(body_features["center"][1] + body_features["major_axis"]))
+                center = (int(body_features["xcenter"]), int(body_features["ycenter"]))
+                center_writing = (int(body_features["xcenter"]),
+                                int(body_features["ycenter"] + body_features["major_axis"]))
                 image_to_draw = cv2.ellipse(img=image_to_draw,
                                     center=center,
                                     axes=(int(body_features["major_axis"]), int(body_features["minor_axis"])),
