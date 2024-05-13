@@ -15,7 +15,7 @@ class Particle:
     """A particle is an object tracked in the image."""
     def __init__(self, id: int):
         self.is_init = False
-        self.object_id = id 
+        self.id = id 
         self.attributes: Dict[str, Union[float, int]] = {}
 
         self._KF = KalmanFilter(4, 2)
@@ -53,8 +53,8 @@ class Particle:
 class ObjectTracker(object):
     """Track the objects in a video and solve the assignment issue."""
     def __init__(self, params: Dict[str, float]= {},save_folder: str = "", visualization: bool = True):
-        self.objects: List[Particle] = []
-        self.object_id = 0
+        self.particles: List[Particle] = []
+        self.max_id = 0
         if params:
             self.params = params.copy()
         self.is_init = False
@@ -101,14 +101,19 @@ class ObjectTracker(object):
 
         """
         if self.params and self.detector:
-            detection = self.detector.process(image1)
-            for detec in detection:
-                
-                particle = Particle(self.object_id)
+            self.id: List[int] = []
+            self.is_init = True
+            self.prev_detection = self.detector.process(image1)
+            self.lost: List[int] = []
+            self.im = 0
+            for detec in self.prev_detection:
+                particle = Particle(self.max_id)
                 particle.update_attributes(detec)
-                self.objects.append(particle)
+                particle.attributes["time"] = self.im
+                particle.attributes["id"] = particle.id
+                self.particles.append(particle)
                 
-                self.object_id += 1
+                self.max_id += 1
 
     @staticmethod
     def div(a: float, b: float) -> float:
@@ -174,60 +179,166 @@ class ObjectTracker(object):
             cost += ObjectTracker.div(i, j)
         return cost
     
+    def process(self, image: np.ndarray) -> List[Dict[str, Union[int, float]]]:
+        """Process an image.
+
+        Parameters
+        ----------
+        image : ndarray
+            Image, channels depending on the detector.
+
+        Returns
+        -------
+        list
+            List of detected objects as dict.
+
+        """
+        if self.is_init:
+            self.current_detection = self.detector.process(image)
+            order = self.assign(self.prev_detection, self.current_detection)
+            losts = self.find_lost(order)
+            self.current_detection = self.reassign(self.prev_detection,
+                                                   self.current_detection, order)
+            while len(self.current_detection) - len(self.id) != 0:
+                self.max_id += 1
+                self.id.append(self.max_id)
+                self.lost.append(0)
+            self.current, self.lost, self.id = self.clean(
+                self.current_detection, self.lost, losts, self.id)
+            for i, j in enumerate(self.current_detection):
+                j["time"] = self.im
+                j["id"] = self.id[i]
+            self.im += 1
+            self.prev_detection = self.current_detection
+            self.lost_ids = losts
+            if self.visualization:
+                self.make_verif_image(image)
+            self.count += 1
+            
+            return [j for i, j in enumerate(self.current_detection) if i not in losts]
+        return []
+
+    def assign(self) -> List[int]:
+        """Find the optimal assignent.
+        Returns
+        -------
+        list
+            Assignment.
+        """
+        if len(self.particles) == 0:
+            assignment: List[int] = []
+        elif len(self.current_detection) == 0:
+            assignment = [-1] * len(self.particles)
+        else:
+            cost = np.zeros((len(self.particles), len(self.current_detection)))
+            valid = []
+            for i, prev_particle in enumerate(self.particles):
+                for j, current_coord in enumerate(self.current_detection):
+                    if prev_particle.is_init:
+                        predicted = prev_particle.predict()
+                        distance = np.sqrt((predicted[0] - current_coord["xcenter"]) ** 2 + (
+                            predicted[1] - current_coord["ycenter"]) ** 2)
+                    else:
+                        distance = np.sqrt((prev_particle.attributes["xcenter"] - current_coord["xcenter"]) ** 2 + (
+                            prev_particle.attributes["xcenter"] - current_coord["ycenter"]) ** 2)
+                    
+                    angle = np.abs(self.angle_difference(
+                        prev_particle.attributes["orientation"], current_coord["orientation"]))
+                    area = np.abs(prev_particle.attributes["area"] - current_coord["area"])
+                    perim = np.abs(prev_particle.attributes["perim"] - current_coord["perim"])
+
+                    if distance < self.params["maxDist"]:
+                        cost[i, j] = self.compute_cost([distance, angle, area, perim], [
+                                                    self.params["normDist"], self.params["normAngle"], self.params["normArea"], self.params["normPerim"]])
+                        valid.append((i, j))
+                    else:
+                        cost[i, j] = 1e34
+
+            row, col = linear_sum_assignment(cost)
+
+            assignment = []
+            for i, _ in enumerate(self.prev_detection):
+                if i in row and (i, col[list(row).index(i)]) in valid:
+                    assignment.append(col[list(row).index(i)])
+                else:
+                    assignment.append(-1)
+
+        return assignment
+
+    def find_lost(self, assignment: List[int]) -> List[int]:
+        """Find object lost at previous step.
+
+        Parameters
+        ----------
+        assignment : list
+            Assignment indexes.
+
+        Returns
+        -------
+        list
+            Indexes of lost objects.
+
+        """
+        return [i for i, j in enumerate(assignment) if j == -1]
+    
+    def reassign(self,
+                 past: List[Dict[str, Union[int, float]]],
+                 current: List[Dict[str, Union[int, float]]],
+                 order: List[int]) -> List[Dict[str, Union[int, float]]]:
+        """Reassign current based on order.
+
+        Parameters
+        ----------
+        prev : list
+            List of dict of previous detections.
+        current : list
+            List of dict of current detections.
+        order : list
+            Reassingment
+
+        Returns
+        -------
+        list
+            Reordered current.
+
+        """
+        tmp = past
+        for i, j in enumerate(past):
+            if order[i] != -1:
+                tmp[i] = current[order[i]]
+
+        for i, j in enumerate(current):
+            if i not in order:
+                tmp.append(j)
+
+        return tmp
+
     def update(self, detections):
         """Update the tracking."""
 
-        N , M = len(self.objects), len(detections)
-        
-        cost_matrix = np.zeros(shape=(N, M)) 
-        
-        for i in range(N):
-            for j in range(M):
-                diff_distance = self.objects[i].prediction - detections[j]
-                dist = diff_distance[0][0]*diff_distance[0][0] +diff_distance[1][0]*diff_distance[1][0]
-                cost_matrix[i][j] = self.compute_cost()
-
-        assign = []
-        for _ in range(N):
-            assign.append(-1)
-            
-        rows, cols = linear_sum_assignment(cost_matrix)
-        
-        for i in range(len(rows)):
-            assign[rows[i]] = cols[i]
-
-        unassign = []
-        for i in range(len(assign)):
-            if (assign[i] != -1):
-                if (cost_matrix[i][assign[i]] > self.params["min_dist"]):
-                    assign[i] = -1
-                    unassign.append(i)
-            else:
-                self.objects[i].skip_count += 1
-
         del_objects = []
-        for i in range(len(self.objects)):
-            if (self.objects[i].skip_count > self.params["max_skip"]):
+        for i in range(len(self.particles)):
+            if (self.particles[i].skip_count > self.params["max_skip"]):
                 del_objects.append(i)
 
         if del_objects: # TODO check
             for id in del_objects:
-                if id < len(self.objects):
-                    del self.objects[id]
+                if id < len(self.particles):
+                    del self.particles[id]
                     del assign[id]         
 
         for i in range(len(detections)):
                 if i not in assign:
-                    self.objects.append(Particle(detections[i], self.object_id))
+                    self.particles.append(Particle(detections[i], self.object_id))
                     self.object_id += 1
 
 
                 
         for i in range(len(assign)):
-            self.objects[i]._KF.predict()
+            self.particles[i]._KF.predict()
 
             if(assign[i] != -1):
-                self.objects[i].skip_count = 0
-                self.objects[i].prediction = self.objects[i]._KF.update(detections[assign[i]])
+                self.particles[i].skip_count = 0
+                self.particles[i].prediction = self.particles[i]._KF.update(detections[assign[i]])
             else:
-                self.objects[i].prediction = self.objects[i]._KF.update( np.array([[0], [0]]))
+                self.particles[i].prediction = self.particles[i]._KF.update( np.array([[0], [0]]))
