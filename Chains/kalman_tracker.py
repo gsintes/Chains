@@ -27,7 +27,7 @@ class Particle:
         self._kf.H = np.array([[1., 0., 0., 0.],
                               [0., 1., 0., 0.]])
         self._kf.P *= 1000. #TODO fix value for the 3 next param
-        self._kf.R = [[2, 2]] # Error in estimate
+        self._kf.R = [[2, 0], [0, 2]] # Error in estimate
         self._kf.Q = Q_discrete_white_noise(dim=4, dt=0.1, var=0.13)
         self.skip_count = 0
 
@@ -83,7 +83,6 @@ class ObjectTracker:
         if self.params and self.detector:
             self.is_init = True
             detection = self.detector.process(image)
-            print(len(detection))
             for detec in detection:
                 particle = Particle(self.max_id)
                 particle.update_attributes(detec, self.im)
@@ -174,7 +173,6 @@ class ObjectTracker:
         """
         if self.is_init:
             current_detection = self.detector.process(image)
-            print(len(current_detection))
             order = self.assign(current_detection)
             losts = self.find_lost(order)
             self.update(current_detection, order)
@@ -202,15 +200,16 @@ class ObjectTracker:
             cost = np.zeros((len(self.particles), len(current_detection)))
             valid = []
             for i, prev_particle in enumerate(self.particles):
+                if prev_particle.is_init:
+                    predicted = prev_particle.predict()
                 for j, current_coord in enumerate(current_detection):
                     if prev_particle.is_init:
-                        predicted = prev_particle.predict()
                         distance = np.sqrt((predicted[0] - current_coord["xcenter"]) ** 2 + (
                             predicted[1] - current_coord["ycenter"]) ** 2)
                     else:
                         distance = np.sqrt((prev_particle.attributes["xcenter"] -
                             current_coord["xcenter"]) ** 2 +
-                            (prev_particle.attributes["xcenter"] - current_coord["ycenter"]) ** 2)
+                            (prev_particle.attributes["ycenter"] - current_coord["ycenter"]) ** 2)
 
                     angle = np.abs(self.angle_difference(
                         prev_particle.attributes["orientation"], current_coord["orientation"]))
@@ -235,7 +234,6 @@ class ObjectTracker:
                     assignment.append(col[list(row).index(i)])
                 else:
                     assignment.append(-1)
-
         return assignment
 
     def find_lost(self, assignment: List[int]) -> List[int]:
@@ -273,15 +271,15 @@ class ObjectTracker:
                 part.skip_count = 0
                 part.attributes["time"] = self.im
                 x = current_detection[order[i]]["xcenter"]
-                y = current_detection[order[i]]["xcenter"]
-                part.update_attributes(current_detection[order[i]], self.im)
+                y = current_detection[order[i]]["ycenter"]
                 if part.is_init:
                     part.update(np.array([x, y]))
                 else:
                     part.is_init = True
                     x_v = x - part.attributes["xcenter"]
-                    y_v = x - part.attributes["ycenter"]
+                    y_v = y - part.attributes["ycenter"]
                     part.init_filter(np.array([x, y, x_v, y_v]))
+                part.update_attributes(current_detection[order[i]], self.im)
 
         for i, curr in enumerate(current_detection):
             if i not in order:
