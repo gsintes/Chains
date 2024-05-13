@@ -174,6 +174,7 @@ class ObjectTracker:
         """
         if self.is_init:
             current_detection = self.detector.process(image)
+            print(len(current_detection))
             order = self.assign(current_detection)
             losts = self.find_lost(order)
             self.update(current_detection, order)
