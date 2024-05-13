@@ -17,7 +17,7 @@ def main(folder_path: str) -> str:
     exp_name = folder_path.split("/")[-1]
     print(exp_name)
 
-    image_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".tif")]
+    image_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".tif")][0:100] #TODO fix back
     image_list.sort()
     param_file = os.path.join(folder_path, "params.json")
     try:
@@ -99,5 +99,5 @@ if __name__=="__main__":
     #         with open(log_file, 'a') as file:
     #             exp_name = f.split("/")[-1]
     #             file.write(f"{exp_name} error at {datetime.now()}: {e.__repr__}\n")            
-    folder = "/Users/sintes/Desktop/NASGuillaume/ChainFormation/2024-03-13_14h11m54s"
+    folder = "/Users/sintes/Desktop/2023-11-16_16h03m23s"
     main(folder)

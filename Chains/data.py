@@ -119,18 +119,11 @@ class Result():
         if not isinstance(dat, list):
             dat = [dat]
         for data in dat:
-            cursor.execute("INSERT INTO tracking (xHead, yHead, tHead, xTail, yTail, tTail, xBody, yBody, tBody, curvature, areaBody,"
-                           "perimeterBody, headMajorAxisLength, headMinorAxisLength, headExcentricity, tailMajorAxisLength,"
-                           "tailMinorAxisLength, tailExcentricity, bodyMajorAxisLength, bodyMinorAxisLength, bodyExcentricity,"
-                           "imageNumber, id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ",
-                           (data["0"]["center"][0], data["0"]["center"][1], data["0"]["orientation"],
-                            data["1"]["center"][0], data["1"]["center"][1], data["1"]["orientation"],
-                            data["2"]["center"][0], data["2"]["center"][1], data["2"]["orientation"],
-                            0, data["3"]["area"], data["3"]["perim"],
-                            data["0"]["major_axis"], data["0"]["minor_axis"],
-                            np.sqrt(1 - (data["0"]["minor_axis"] / data["0"]["major_axis"]) ** 2),
-                            data["1"]["major_axis"], data["1"]["minor_axis"],
-                            np.sqrt(1 - (data["1"]["minor_axis"] / data["1"]["major_axis"]) ** 2),
+            cursor.execute("INSERT INTO tracking (xBody, yBody, tBody, areaBody,"
+                           "perimeterBody, bodyMajorAxisLength, bodyMinorAxisLength, bodyExcentricity,"
+                           "imageNumber, id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ",
+                           (data["2"]["center"][0], data["2"]["center"][1], data["2"]["orientation"],
+                            data["3"]["area"], data["3"]["perim"],
                             data["2"]["major_axis"], data["2"]["minor_axis"],
                             np.sqrt(1 - (data["2"]["minor_axis"] / data["2"]["major_axis"]) ** 2),
                             data["3"]["time"], data["3"]["id"]))
@@ -148,13 +141,9 @@ class Result():
                 pass
         self.cnx = sqlite3.connect(os.path.join(path,"tracking.db"))
         cursor = self.cnx.cursor()
-        cursor.execute("CREATE TABLE tracking ( xHead REAL, yHead REAL, tHead REAL, xTail REAL,"
-                       "yTail REAL, tTail REAL, xBody REAL, yBody REAL, tBody REAL,"
-                       "curvature REAL, areaBody REAL, perimeterBody REAL,"
-                       "headMajorAxisLength REAL, headMinorAxisLength REAL,"
-                       "headExcentricity REAL, tailMajorAxisLength REAL, tailMinorAxisLength REAL,"
-
-                       "tailExcentricity REAL, bodyMajorAxisLength REAL, bodyMinorAxisLength REAL,"
+        cursor.execute("CREATE TABLE tracking (xBody REAL, yBody REAL, tBody REAL,"
+                       "areaBody REAL, perimeterBody REAL,"
+                       "bodyMajorAxisLength REAL, bodyMinorAxisLength REAL,"
                        "bodyExcentricity REAL, imageNumber INTEGER, id INTEGER)")
         self.cnx.commit()
         cursor.close()

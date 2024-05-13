@@ -52,39 +52,10 @@ class BaseDetector(metaclass=abc.ABCMeta):
                 contours[0]), "perim": cv2.arcLength(contours[0], True)}
 
             body = self.get_features(mask)
-            is_left, rotated_mask, rot = self.get_direction(mask, body)
-
-            body_center = [int(i) for i in np.floor(rot @ np.asarray([body["center"][0], body["center"][1], 1]))]
-            rot = cv2.invertAffineTransform(rot)
-
-            mask_tail = rotated_mask[:, body_center[0]::]
-            tail = self.get_features(mask_tail)
-            a = rot @ np.asarray(
-                [tail["center"][0] + body_center[0], tail["center"][1], 1])
-            tail["center"][0] = a[0] + coordinate[0]
-            tail["center"][1] = a[1] + coordinate[1]
-            tail["orientation"] = tail["orientation"] - \
-                np.pi * (tail["orientation"] > np.pi)
-            tail["orientation"] = self.modulo(
-                tail["orientation"] + body["orientation"] + np.pi * (np.abs(tail["orientation"]) > 0.5 * np.pi))
-
-            mask_head = rotated_mask[:, 0:body_center[0]]
-            head = self.get_features(mask_head)
-            a = rot @ np.asarray([head["center"][0], head["center"][1], 1])
-            head["center"][0] = a[0] + coordinate[0]
-            head["center"][1] = a[1] + coordinate[1]
-            head["orientation"] = head["orientation"] - \
-                np.pi * (head["orientation"] > np.pi)
-            head["orientation"] = self.modulo(
-                head["orientation"] + body["orientation"] + np.pi * (np.abs(head["orientation"]) > 0.5 * np.pi))
 
             body["center"][0] += coordinate[0]
             body["center"][1] += coordinate[1]
-
-            if is_left:
-                detections.append({"3": data, "2": body, "1": tail, "0": head})
-            else:
-                detections.append({"3": data, "2": body, "0": tail, "1": head})
+            detections.append({"3": data, "2": body})
         return detections
 
     def get_features(self, mask: np.ndarray) -> Dict[str, Any]:
