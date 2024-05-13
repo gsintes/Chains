@@ -63,7 +63,7 @@ def main(folder_path: str) -> str:
 
 
     # Set up tracker
-    tracker = Tracker(params, tracked_path) 
+    tracker = Tracker(params, tracked_path)
     tracker.set_params(params)
     tracker.set_detector(detector)
 
@@ -86,7 +86,7 @@ if __name__=="__main__":
     # log_file = os.path.join(parent_folder, "log.txt")
 
     # with open(log_file, 'w') as file:
-    #     file.write("Tracking code \n") 
+    #     file.write("Tracking code \n")
 
     # folder_list: List[Tuple[str]] = [(os.path.join(parent_folder, f),) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     # folder_list.sort()
@@ -99,6 +99,6 @@ if __name__=="__main__":
     #     except Exception as e:
     #         with open(log_file, 'a') as file:
     #             exp_name = f.split("/")[-1]
-    #             file.write(f"{exp_name} error at {datetime.now()}: {e.__repr__}\n")            
+    #             file.write(f"{exp_name} error at {datetime.now()}: {e.__repr__}\n")
     folder = "/Users/sintes/Desktop/2023-11-16_16h03m23s"
     main(folder)

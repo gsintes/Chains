@@ -1,6 +1,6 @@
 """Tracker based on Kalman filters."""
 
-from typing import List, Dict, Union
+from typing import List, Dict
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -12,10 +12,10 @@ from base_detector import BaseDetector
 
 class Particle:
     """A particle is an object tracked in the image."""
-    def __init__(self, id: int):
+    def __init__(self, identifier: int):
         self.is_init = False
-        self.id = id
-        self.attributes: Dict[str, Union[float, int]] = {}
+        self.id = identifier
+        self.attributes: Dict[str, float] = {}
 
         self._kf = KalmanFilter(4, 2)
         self._kf.F = np.array([[1., 0., 1., 0.],
@@ -43,7 +43,7 @@ class Particle:
         """Predict the position."""
         self._kf.update(measure)
 
-    def update_attributes(self, detection: Dict[str, Union[float, int]], time: int) -> None:
+    def update_attributes(self, detection: Dict[str, float], time: int) -> None:
         """Update the attributes based on the detection."""
         self.attributes = detection
         self.attributes["time"] = time
@@ -51,37 +51,19 @@ class Particle:
 
 class ObjectTracker:
     """Track the objects in a video and solve the assignment issue."""
-    def __init__(self, save_folder: str = "", visualization: bool = True):
+    def __init__(self, params: Dict[str, int],
+                 detector: BaseDetector, save_folder: str = "",
+                 visualization: bool = True):
         self.particles: List[Particle] = []
+        self.params = params
         self.max_id = 0
         self.is_init = False
         self.save_folder = save_folder
         self.count = 0
         self.visualization = visualization
-
-    def set_params(self, params: Dict[str, int]) -> None:
-        """Set the parameters.
-
-        Parameters
-        ----------
-        params : dict
-            Parameters.
-
-        """
-        self.params = params.copy()
-        self.is_init = False
-
-    def set_detector(self, detector: BaseDetector) -> None:
-        """Set the detector.
-
-        Parameters
-        ----------
-        detector : BaseDetector
-            Detector that is an implementation of the BaseDetector.
-
-        """
         self.detector = detector
-        self.is_init = False
+        self.im = 0
+
 
     def initialize(self, image1: np.ndarray) -> None:
         """Initialize the tracker on the first images.
@@ -98,16 +80,12 @@ class ObjectTracker:
 
         """
         if self.params and self.detector:
-            self.id: List[int] = []
             self.is_init = True
-            self.prev_detection = self.detector.process(image1)
-            self.lost: List[int] = []
-            self.im = 0
-            for detec in self.prev_detection:
+            detection = self.detector.process(image1)
+            for detec in detection:
                 particle = Particle(self.max_id)
                 particle.update_attributes(detec, self.im)
                 self.particles.append(particle)
-                
                 self.max_id += 1
 
     @staticmethod
@@ -128,9 +106,9 @@ class ObjectTracker:
 
         """
         if b != 0:
-            return a/b    
+            return a/b
         return 0
-    
+
     @staticmethod
     def angle_difference(a: float, b: float) -> float:
         """Get the minimal difference, a-b), between two angles.
@@ -151,7 +129,7 @@ class ObjectTracker:
         a = BaseDetector.modulo(a)
         b = BaseDetector.modulo(b)
         return -(BaseDetector.modulo(a - b + np.pi) - np.pi)
-    
+
     def compute_cost(self, var: List[float], norm: List[float]) -> float:
         """Compute the cost.
 
@@ -172,8 +150,8 @@ class ObjectTracker:
         for i, j in zip(var, norm):
             cost += ObjectTracker.div(i, j)
         return cost
-    
-    def process(self, image: np.ndarray) -> List[Dict[str, Union[int, float]]]:
+
+    def process(self, image: np.ndarray) -> List[Dict[str, float]]:
         """Process an image.
 
         Parameters
@@ -188,25 +166,22 @@ class ObjectTracker:
 
         """
         if self.is_init:
-            self.current_detection = self.detector.process(image)
-            order = self.assign()
+            current_detection = self.detector.process(image)
+            order = self.assign(current_detection)
             losts = self.find_lost(order)
-            self.update(order)
+            self.update(current_detection, order)
 
-            self.current, self.lost, self.id = self.clean(
-                self.current_detection, self.lost, losts, self.id)
+            self.clean(current_detection,  losts)
 
             self.im += 1
-            self.prev_detection = self.current_detection
-            self.lost_ids = losts
             if self.visualization:
                 self.make_verif_image(image)
             self.count += 1
-            
+
             return [part.attributes for i, part in enumerate(self.particles) if i not in losts]
         return []
 
-    def assign(self) -> List[int]:
+    def assign(self, current_detection: List[Dict[str, float]]) -> List[int]:
         """Find the optimal assignent.
         Returns
         -------
@@ -215,21 +190,22 @@ class ObjectTracker:
         """
         if len(self.particles) == 0:
             assignment: List[int] = []
-        elif len(self.current_detection) == 0:
+        elif len(current_detection) == 0:
             assignment = [-1] * len(self.particles)
         else:
-            cost = np.zeros((len(self.particles), len(self.current_detection)))
+            cost = np.zeros((len(self.particles), len(current_detection)))
             valid = []
             for i, prev_particle in enumerate(self.particles):
-                for j, current_coord in enumerate(self.current_detection):
+                for j, current_coord in enumerate(current_detection):
                     if prev_particle.is_init:
                         predicted = prev_particle.predict()
                         distance = np.sqrt((predicted[0] - current_coord["xcenter"]) ** 2 + (
                             predicted[1] - current_coord["ycenter"]) ** 2)
                     else:
-                        distance = np.sqrt((prev_particle.attributes["xcenter"] - current_coord["xcenter"]) ** 2 + (
-                            prev_particle.attributes["xcenter"] - current_coord["ycenter"]) ** 2)
-                    
+                        distance = np.sqrt((prev_particle.attributes["xcenter"] -
+                            current_coord["xcenter"]) ** 2 +
+                            (prev_particle.attributes["xcenter"] - current_coord["ycenter"]) ** 2)
+
                     angle = np.abs(self.angle_difference(
                         prev_particle.attributes["orientation"], current_coord["orientation"]))
                     area = np.abs(prev_particle.attributes["area"] - current_coord["area"])
@@ -237,7 +213,10 @@ class ObjectTracker:
 
                     if distance < self.params["maxDist"]:
                         cost[i, j] = self.compute_cost([distance, angle, area, perim], [
-                                                    self.params["normDist"], self.params["normAngle"], self.params["normArea"], self.params["normPerim"]])
+                                                    self.params["normDist"],
+                                                    self.params["normAngle"],
+                                                    self.params["normArea"],
+                                                    self.params["normPerim"]])
                         valid.append((i, j))
                     else:
                         cost[i, j] = 1e34
@@ -268,8 +247,8 @@ class ObjectTracker:
 
         """
         return [i for i, j in enumerate(assignment) if j == -1]
-    
-    def update(self, order: List[int]) -> None:
+
+    def update(self, current_detection: List[Dict[str, float]], order: List[int]) -> None:
         """Reassign current based on order.
 
         Parameters
@@ -285,10 +264,11 @@ class ObjectTracker:
         """
         for i, part in enumerate(self.particles):
             if order[i] != -1:
+                part.skip_count = 0
                 part.attributes["time"] = self.im
-                x = self.current_detection[order[i]]["xcenter"]
-                y = self.current_detection[order[i]]["xcenter"]
-                part.update_attributes(self.current_detection[order[i]], self.im)
+                x = current_detection[order[i]]["xcenter"]
+                y = current_detection[order[i]]["xcenter"]
+                part.update_attributes(current_detection[order[i]], self.im)
                 if part.is_init:
                     part.update(np.array([x, y]))
                 else:
@@ -297,14 +277,12 @@ class ObjectTracker:
                     y_v = x - part.attributes["ycenter"]
                     part.init_filter(np.array([x, y, x_v, y_v]))
 
-        for i, curr in enumerate(self.current_detection):
+        for i, curr in enumerate(current_detection):
             if i not in order:
                 part = Particle(self.max_id)
                 self.max_id += 1
                 part.update_attributes(curr, self.im)
                 self.particles.append(part)
-                
-
 
     # def update(self, detections):
     #     """Update the tracking."""
@@ -318,7 +296,7 @@ class ObjectTracker:
     #         for id in del_objects:
     #             if id < len(self.particles):
     #                 del self.particles[id]
-    #                 del assign[id]         
+    #                 del assign[id]
 
     #     for i in range(len(detections)):
     #             if i not in assign:
@@ -326,12 +304,10 @@ class ObjectTracker:
     #                 self.object_id += 1
 
 
-                
+
     #     for i in range(len(assign)):
     #         self.particles[i]._kf.predict()
 
     #         if(assign[i] != -1):
-    #             self.particles[i].skip_count = 0
-    #             self.particles[i].prediction = self.particles[i]._kf.update(detections[assign[i]])
     #         else:
     #             self.particles[i].prediction = self.particles[i]._kf.update( np.array([[0], [0]]))
