@@ -19,7 +19,7 @@ def main(folder_path: str) -> str:
 
     image_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".tif")]
     image_list.sort()
-    image_list = image_list[0:10] #TODO fix back
+    image_list = image_list
     param_file = os.path.join(folder_path, "params.json")
     try:
         f = open(param_file)
