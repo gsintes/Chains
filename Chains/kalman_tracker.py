@@ -1,6 +1,6 @@
 """Tracker based on Kalman filters."""
 
-from typing import List, Dict
+from typing import List, Dict, Union
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -12,10 +12,11 @@ from base_detector import BaseDetector
 
 class Particle:
     """A particle is an object tracked in the image."""
-    def __init__(self, detect: NDArray[Shape["2", Float]] , id: int):
+    def __init__(self, id: int):
         
-        self.prediction = np.asarray(detect)
         self.object_id = id 
+        self.attributes: Dict[str, float] = {}
+
         self.KF = KalmanFilter(4, 2)
         self.KF.F = np.array([[1., 0., 1., 0.],
                               [0., 1., 0., 1.],
@@ -24,11 +25,15 @@ class Particle:
         self.KF.H = np.array([[1., 0., 0., 0.],
                               [0., 1., 0., 0.]])
         self.KF.P *= 1000. #TODO fix value for the 3 next param
-        self.KF.R = [[5, 5]] # Error in estimate
+        self.KF.R = [[2, 2]] # Error in estimate
         self.KF.Q = Q_discrete_white_noise(dim=4, dt=0.1, var=0.13)
 
         self.skip_count = 0 
         self.line = [] 
+
+    def update_attributes(self, detection: Dict[str, Union[float, int]]) -> None:
+        """Update the attributes based on the detection."""
+        self.attributes = detection
         
 class ObjectTracker(object):
     """Track the objects in a video and solve the assignment issue."""
@@ -41,6 +46,18 @@ class ObjectTracker(object):
         self.save_folder = save_folder
         self.count = 0
         self.visualization = visualization
+
+    def set_params(self, params: Dict[str, int]) -> None:
+        """Set the parameters.
+
+        Parameters
+        ----------
+        params : dict
+            Parameters.
+
+        """
+        self.params = params.copy()
+        self.is_init = False
 
     def set_detector(self, detector: BaseDetector) -> None:
         """Set the detector.
@@ -69,10 +86,12 @@ class ObjectTracker(object):
 
         """
         if self.params and self.detector:
-            self.prev_detection = self.detector.process(image)
-            for i in range(len(detections)):
+            detection = self.detector.process(image)
+            for i in range(len(detection)):
                 
-                self.objects.append( Particle(detections[i], self.object_id) )
+                particle = Particle(self.object_id)
+                particle
+                self.objects.append(particle)
                 
                 self.object_id += 1
             return self.prev_detection
@@ -144,13 +163,7 @@ class ObjectTracker(object):
     
     def update(self, detections):
         """Update the tracking."""
-        if self.objects ==[]:
-            for i in range(len(detections)):
-                
-                self.objects.append( Particle(detections[i], self.object_id) )
-                
-                self.object_id += 1
-                
+
         N , M = len(self.objects), len(detections)
         
         cost_matrix = np.zeros(shape=(N, M)) 

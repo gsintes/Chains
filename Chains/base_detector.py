@@ -1,5 +1,5 @@
 import abc
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Union
 
 import numpy as np
 import cv2
@@ -30,7 +30,7 @@ class BaseDetector(metaclass=abc.ABCMeta):
         """
         pass
     
-    def process(self, image: np.ndarray) -> List[Dict[str, Dict[str, Any]]]:
+    def process(self, image: np.ndarray) -> List[Dict[str, Union[float, int]]]:
         """Process one image.
 
         Parameters
@@ -44,21 +44,23 @@ class BaseDetector(metaclass=abc.ABCMeta):
             List of detected objects and their features.
 
         """
-        detections: List[Dict[str, Dict[str, Any]]] = []
+        detections: List[Dict[str, Union[float, int]]] = []
         for mask, coordinate in self.detect(image):
             contours, _ = cv2.findContours(
                 mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            data = {"area": cv2.contourArea(
-                contours[0]), "perim": cv2.arcLength(contours[0], True)}
+             
 
             body = self.get_features(mask)
+            body["area"] = cv2.contourArea(
+                contours[0])
+            body["perim"] = cv2.arcLength(contours[0], True)
 
             body["center"][0] += coordinate[0]
             body["center"][1] += coordinate[1]
-            detections.append({"3": data, "2": body})
+            detections.append(body)
         return detections
 
-    def get_features(self, mask: np.ndarray) -> Dict[str, Any]:
+    def get_features(self, mask: np.ndarray) -> Dict[str, Union[float, int]]:
         """Get the object features using equivalent ellipse.
 
 
@@ -111,7 +113,7 @@ class BaseDetector(metaclass=abc.ABCMeta):
         """
         return angle - 2 * np.pi * np.floor(angle / (2 * np.pi))
 
-    def get_direction(self, mask: np.ndarray, features: Dict[str, Any]) -> Tuple[bool, np.ndarray, np.ndarray]:
+    def get_direction(self, mask: np.ndarray, features: Dict[str, Union[float, int]]) -> Tuple[bool, np.ndarray, np.ndarray]:
         """Get the object direction.
 
         The object orientation is updated with the correct direction.
@@ -146,8 +148,8 @@ class BaseDetector(metaclass=abc.ABCMeta):
         indexes = np.arange(1, len(dist)+1, dtype=np.float64)
         mean = np.sum(indexes*dist)
         sd = np.sqrt(np.sum((indexes-mean)**2*dist))
-        skew = (np.sum(indexes**3*dist) -
-                3 * mean * sd**2 - mean**3) / sd**3
+        skew = (np.sum(indexes ** 3 * dist) -
+                3 * mean * sd ** 2 - mean ** 3) / sd ** 3
         if skew > 0:
             features["orientation"] = self.modulo(
                 features["orientation"] - np.pi)

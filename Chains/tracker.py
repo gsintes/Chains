@@ -77,8 +77,8 @@ class Tracker():
             self.lost = [0] * len(self.prev_detection)
             self.im = 0
             for i, j in enumerate(self.prev_detection):
-                j["3"]["time"] = self.im
-                j["3"]["id"] = self.id[i]
+                j["time"] = self.im
+                j["id"] = self.id[i]
             self.im += 1
             return self.prev_detection
         return []
@@ -110,8 +110,8 @@ class Tracker():
             self.current, self.lost, self.id = self.clean(
                 self.current_detection, self.lost, losts, self.id)
             for i, j in enumerate(self.current_detection):
-                j["3"]["time"] = self.im
-                j["3"]["id"] = self.id[i]
+                j["time"] = self.im
+                j["id"] = self.id[i]
             self.im += 1
             self.prev_detection = self.current_detection
             self.lost_ids = losts
@@ -215,17 +215,15 @@ class Tracker():
         else:
             cost = np.zeros((len(prev), len(current)))
             valid = []
-            for i, l in enumerate(prev):
-                prev_coord = l[str(int(self.params["spot"]))]
-                for j, k in enumerate(current):
-                    current_coord = k[str(int(self.params["spot"]))]
-
+            for i, prev_coord in enumerate(prev):
+                
+                for j, current_coord in enumerate(current):
                     distance = np.sqrt((prev_coord["center"][0] - current_coord["center"][0]) ** 2 + (
                         prev_coord["center"][1] - current_coord["center"][1]) ** 2)
                     angle = np.abs(self.angle_difference(
                         prev_coord["orientation"], current_coord["orientation"]))
-                    area = np.abs(l["3"]["area"] - k["3"]["area"])
-                    perim = np.abs(l["3"]["perim"] - k["3"]["perim"])
+                    area = np.abs(prev_coord["area"] - current_coord["area"])
+                    perim = np.abs(prev_coord["perim"] - current_coord["perim"])
 
                     if distance < self.params["maxDist"]:
                         cost[i, j] = self.compute_cost([distance, angle, area, perim], [
@@ -341,10 +339,9 @@ class Tracker():
         colors = [Tracker.hex_to_rgb(color) for color in mcolors.TABLEAU_COLORS.values()]
         image_to_draw = cv2.merge([image, image, image])
         font = cv2.FONT_HERSHEY_SIMPLEX
-        for object in self.current_detection:
-            id_obj = object["3"]["id"]
+        for body_features in self.current_detection:
+            id_obj = body_features["id"]
             if id_obj not in self.lost_ids:
-                body_features = object["2"]
                 color = colors[id_obj % len(colors)]
                 center = (int(body_features["center"][0]), int(body_features["center"][1]))
                 center_writing = (int(body_features["center"][0]),
