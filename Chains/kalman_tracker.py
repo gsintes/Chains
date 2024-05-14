@@ -297,11 +297,15 @@ class ObjectTracker:
         lost : list
             Lost objects.
         """
+        to_delete = []
         for i in lost:
             self.particles[i].skip_count += 1
             self.particles[i].update(None)
             if self.particles[i].skip_count > self.params["maxTime"]:
-                self.particles.pop(i)
+                to_delete.append(i)
+        to_delete.sort(reverse=True)
+        for i in to_delete:
+            self.particles.pop(i)
 
     @staticmethod
     def hex_to_rgb(value):
