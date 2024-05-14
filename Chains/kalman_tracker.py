@@ -26,7 +26,7 @@ class Particle:
                               [0., 0., 0., 1.]])
         self._kf.H = np.array([[1., 0., 0., 0.],
                               [0., 1., 0., 0.]])
-        self._kf.P *= 1000. #TODO fix value for the 3 next param
+        self._kf.P *= 1000.
         self._kf.R = [[2, 0], [0, 2]] # Error in estimate
         self._kf.Q = Q_discrete_white_noise(dim=4, dt=0.1, var=0.13)
         self.skip_count = 0
