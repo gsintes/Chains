@@ -131,14 +131,10 @@ class Result():
         cursor.close()
 
     def __init__(self, path: str) -> None:
-        path = os.path.abspath(path + "/Tracking_Result/")
         try:
-            os.makedirs(path)
-        except FileExistsError:
-            try:
-                os.remove(os.path.join(path, "tracking.db"))
-            except FileNotFoundError:
-                pass
+            os.remove(os.path.join(path, "tracking.db"))
+        except FileNotFoundError:
+            pass
         self.cnx = sqlite3.connect(os.path.join(path,"tracking.db"))
         cursor = self.cnx.cursor()
         cursor.execute("CREATE TABLE tracking (xBody REAL, yBody REAL, tBody REAL,"

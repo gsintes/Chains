@@ -1,6 +1,6 @@
+"""Program to run tracking in chain of bacteria."""
 
 import os
-from typing import List, Tuple
 import shutil
 import json
 from datetime import datetime
@@ -17,14 +17,14 @@ def main(folder_path: str) -> str:
     exp_name = folder_path.split("/")[-1]
     print(exp_name)
 
-    image_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".tif")]
+    image_list = [os.path.join(folder_path, file) for file
+                in os.listdir(folder_path) if file.endswith(".tif")]
     image_list.sort()
-    image_list = image_list
     param_file = os.path.join(folder_path, "params.json")
     try:
-        f = open(param_file)
-        parsed_params = json.load(f)
-        max_int = parsed_params["maxint"]
+        with open(param_file, "r") as f:
+            parsed_params = json.load(f)
+            max_int = parsed_params["maxint"]
     except FileNotFoundError:
         max_int = int(preprocessing.max_intensity_video(image_list))
         with open(param_file, 'w') as f:
@@ -36,11 +36,17 @@ def main(folder_path: str) -> str:
     except FileExistsError:
         pass
 
+    try:
+        os.makedirs(os.path.join(folder_path,"Tracking_Result"))
+    except FileExistsError:
+        shutil.rmtree(os.path.join(folder_path,"Tracking_Result"))
+        os.makedirs(os.path.join(folder_path,"Tracking_Result"))
+
     # Load configuration
     config = dat.Configuration()
     params = config.read_toml(os.path.join(os.getcwd(),"cfg.toml"))
     # Data saver
-    saver = Result(folder_path)
+    saver = Result(os.getcwd())
 
     # Set up detector
 
@@ -77,6 +83,7 @@ def main(folder_path: str) -> str:
         frame = preprocessing.convert_16to8bits(im, max_int)
         im_data = tracker.process(frame)
         saver.add_data(im_data)
+    shutil.move(os.path.join(os.getcwd(), "tracking.db"), os.path.join(folder_path,"Tracking_Result"))
     return f"{exp_name} done at {datetime.now()}\n"
 
 if __name__=="__main__":
@@ -98,5 +105,5 @@ if __name__=="__main__":
     #         with open(log_file, 'a') as file:
     #             exp_name = f.split("/")[-1]
     #             file.write(f"{exp_name} error at {datetime.now()}: {e.__repr__}\n")
-    folder = "/Users/sintes/Desktop/2023-11-16_16h03m23s"
+    folder = "/Volumes/Guillaume/Chains/Chains 11%/2023-11-16_16h03m23s"
     main(folder)
