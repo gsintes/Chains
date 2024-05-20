@@ -33,7 +33,7 @@ class Analysis():
         df = pd.read_sql_query('SELECT xBody, yBody, bodyMajorAxisLength, imageNumber, id FROM tracking', con)
         con.close()
 
-        df["time"] = df["imageNumber"] / self.frameRate 
+        df["time"] = df["imageNumber"] / self.frameRate
 
         df["id"] = pd.to_numeric(df["id"], downcast="unsigned")
         df["imageNumber"] = pd.to_numeric(df["imageNumber"], downcast="signed")
@@ -54,12 +54,12 @@ class Analysis():
             for ax in coord:
                 pos_diff = data[ax].diff() / self.scale
                 time_diff = data["time"].diff()
-                
+
                 velocity = pos_diff / time_diff
                 self.data.loc[velocity.index, ax[0] + "Vel"] = velocity
         self.data["velocity"] = np.sqrt(self.data["xVel"] ** 2 + self.data["yVel"] ** 2)
 
-    @staticmethod   
+    @staticmethod
     def detect_plateau_value(sequence: pd.Series):
         """Detect a plateau in a serie."""
 
@@ -73,18 +73,18 @@ class Analysis():
         for i, val_std in enumerate(std_moving):
             if val_std < mean - std:
                 values.append(list_seq[i])
-        if len(values) != 0:    
+        if len(values) != 0:
             return np.mean(values)
         else:
             return sequence.mean()
 
-    def calculate_chain_length(self) -> pd.DataFrame: 
+    def calculate_chain_length(self) -> pd.DataFrame:
         """Calculate the chain length."""
         ids = self.data["id"].unique()
         ids.sort()
         for id in ids:
             data = self.data.loc[self.data["id"] == id]
-            mean_length = Analysis.detect_plateau_value(data["bodyMajorAxisLength"]) 
+            mean_length = Analysis.detect_plateau_value(data["bodyMajorAxisLength"])
             nb_bact = np.rint(mean_length / self.bactLength)
             self.data.loc[self.data["id"] == id, "chain_length"] = nb_bact
 
