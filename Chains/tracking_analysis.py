@@ -1,4 +1,4 @@
-"""Analysis of the tracking data.""" 
+"""Analysis of the tracking data."""
 
 import os
 from typing import List
@@ -158,7 +158,7 @@ class Analysis():
                              "chain_length": chain_length,
                              "velocity": mean_vel,
                              "sign": signs})
-        
+
         single_vel = self.velocity_data.loc[self.velocity_data["chain_length"] == 1, "velocity"].mean()
         self.velocity_data["Single_vel"] = single_vel
         self.velocity_data["Normalized_vel"] = self.velocity_data["velocity"] / single_vel
@@ -185,7 +185,7 @@ def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
     for nb in bact_nb:
         vel_l.append(velocity_data.loc[velocity_data["chain_length"] == nb, "velocity"].mean())
         se_vel_l.append(velocity_data.loc[velocity_data["chain_length"] == nb, "velocity"].sem()) #standard error
-    
+
     vel = np.array(vel_l)
     se_vel = np.array(se_vel_l)
 

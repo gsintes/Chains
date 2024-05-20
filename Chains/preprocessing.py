@@ -1,25 +1,14 @@
 """Preprocessing tools for the image analysis."""
 
 from typing import List, Tuple
-import time
 
 import cv2
 import numpy as np
 from skimage.filters.thresholding import threshold_otsu
 from skimage import morphology
 from skimage.filters import gaussian
-from skimage.measure import label, regionprops, regionprops_table
+from skimage.measure import label, regionprops
 
-def timeit(func):
-    # @wraps(func)
-    def timeit_wrapper(*args, **kwargs):
-        start_time = time.perf_counter()
-        result = func(*args, **kwargs)
-        end_time = time.perf_counter()
-        total_time = end_time - start_time
-        print(f'Function {func.__name__} took {total_time:.4f} s')
-        return result
-    return timeit_wrapper
 
 def max_intensity_video(image_list: List[str]) -> int:
     """Detect the maximum intensity in a video."""
@@ -105,11 +94,11 @@ def elongate_objects(binarized_image: np.ndarray, nb_iter: int = 2, kernel_size:
         new_long = 4 + 0.5 * long_axis
         minor_axis = max(1, int(0.5 * props.axis_minor_length))
         c, s = np.cos(-orientation), np.sin(-orientation)
-        R = np.array(((c, -s), (s, c)))      
+        R = np.array(((c, -s), (s, c)))
         c1 = np.floor(np.array([centroid_x, centroid_y]) + R @ (0, - new_long)).astype("int64")
         c4 = np.floor(np.array([centroid_x, centroid_y]) + R @ (0,new_long)).astype("int64")
         binarized_image = cv2.line(binarized_image, c1, c4, 255, minor_axis)
-    return binarized_image 
+    return binarized_image
 
 def contour_on_the_side(contour: List[List[List[int]]], im_shape: Tuple[int, ...]) -> bool:
     """Detect if a contour is touching the side of the image."""
@@ -117,7 +106,7 @@ def contour_on_the_side(contour: List[List[List[int]]], im_shape: Tuple[int, ...
         point = i[0]
         y = point[0]
         x = point[1]
-        
+
         if x == 0 or x == im_shape[0] - 1:
             return True
         if y == 0 or y == im_shape[1] - 1:
