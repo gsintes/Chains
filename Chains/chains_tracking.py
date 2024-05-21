@@ -36,6 +36,13 @@ def main(folder_path: str) -> str:
     except FileExistsError:
         pass
 
+    temp_folder = os.path.join(os.getcwd(), "temp")
+
+    try:
+        os.makedirs(temp_folder)
+    except FileExistsError:
+        pass
+
     try:
         os.makedirs(os.path.join(folder_path,"Tracking_Result"))
     except FileExistsError:
@@ -46,7 +53,7 @@ def main(folder_path: str) -> str:
     config = dat.Configuration()
     params = config.read_toml(os.path.join(os.getcwd(),"cfg.toml"))
     # Data saver
-    saver = Result(os.getcwd())
+    saver = Result(temp_folder)
 
     # Set up detector
 
@@ -83,7 +90,9 @@ def main(folder_path: str) -> str:
         frame = preprocessing.convert_16to8bits(im, max_int)
         im_data = tracker.process(frame)
         saver.add_data(im_data)
-    shutil.move(os.path.join(os.getcwd(), "tracking.db"), os.path.join(folder_path,"Tracking_Result"))
+    shutil.move(os.path.join(temp_folder, "tracking.db"), os.path.join(folder_path,"Tracking_Result"))
+    shutil.rmtree(temp_folder)
+
     return f"{exp_name} done at {datetime.now()}\n"
 
 if __name__=="__main__":
@@ -105,5 +114,5 @@ if __name__=="__main__":
     #         with open(log_file, 'a') as file:
     #             exp_name = f.split("/")[-1]
     #             file.write(f"{exp_name} error at {datetime.now()}: {e.__repr__}\n")
-    folder = "/Volumes/Chains/ChainFormation/2024-05-09_11h28m54s"
+    folder = "/Users/sintes/Desktop/2023-10-31_11h15m10s"
     main(folder)
