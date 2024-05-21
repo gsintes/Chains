@@ -29,7 +29,7 @@ class BaseDetector(metaclass=abc.ABCMeta):
 
         """
         pass
-    
+
     def process(self, image: np.ndarray) -> List[Dict[str, Union[float, int]]]:
         """Process one image.
 
@@ -48,7 +48,7 @@ class BaseDetector(metaclass=abc.ABCMeta):
         for mask, coordinate in self.detect(image):
             contours, _ = cv2.findContours(
                 mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-             
+
 
             body = self.get_features(mask)
             body["area"] = cv2.contourArea(
