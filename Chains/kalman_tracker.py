@@ -329,5 +329,4 @@ class ObjectTracker:
                                 axes=(int(attributes["major_axis"]), int(attributes["minor_axis"])),
                                 angle=180 * (1 - attributes["orientation"] / np.pi), startAngle=0, endAngle=360,
                                 color=color, thickness=1)
-            image_to_draw = cv2.putText(image_to_draw, str(attributes["id"]), org=center_writing, fontFace=font, fontScale=1, color=color)
         cv2.imwrite(os.path.join(self.save_folder, f"tracked{self.im:06d}.png"), image_to_draw)

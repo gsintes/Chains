@@ -5,9 +5,8 @@ import shutil
 import json
 from datetime import datetime
 
-import cv2
 
-from chains_detector import ChainDetector
+from AI_detector import AIDetector
 from kalman_tracker import ObjectTracker
 from data import Result
 import data as dat
@@ -20,6 +19,7 @@ def main(folder_path: str) -> str:
     image_list = [os.path.join(folder_path, file) for file
                 in os.listdir(folder_path) if file.endswith(".tif")]
     image_list.sort()
+    image_list = image_list[0:50]
     param_file = os.path.join(folder_path, "params.json")
     try:
         with open(param_file, "r") as f:
@@ -36,7 +36,7 @@ def main(folder_path: str) -> str:
     except FileExistsError:
         pass
 
-    temp_folder = os.path.join(os.getcwd(), "temp")
+    temp_folder = os.path.join(os.getcwd(), "tmp")
 
     try:
         os.makedirs(temp_folder)
@@ -56,24 +56,7 @@ def main(folder_path: str) -> str:
     saver = Result(temp_folder)
 
     # Set up detector
-
-    visualisation_processed = False
-    if visualisation_processed :
-        processed_path = os.path.join(folder_path, "Figure", "Processed")
-        shutil.rmtree(processed_path, ignore_errors=True)
-        os.makedirs(processed_path)
-        detector = ChainDetector(params, processed_path, visualisation=True)
-    else:
-        detector = ChainDetector(params, "", visualisation=False)
-
-    bg_path = os.path.join(folder_path, "Figure/background.png")
-    if os.path.isfile(bg_path):
-        background = cv2.imread(bg_path, cv2.IMREAD_UNCHANGED)
-    else:
-        background = preprocessing.get_background(image_list[0:100], max_int)
-        cv2.imwrite(bg_path, background)
-    detector.set_background(background)
-
+    detector = AIDetector(os.path.join(os.getcwd(), "config_files"))
 
     # Set up tracker
     tracker = ObjectTracker(params, detector, tracked_path)

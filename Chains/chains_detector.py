@@ -30,7 +30,7 @@ class ChainDetector(BaseDetector):
         self.kernel_size = 7
         self.nb_iter = 2
 
-    def detect(self, image: np.ndarray) -> List[Tuple[np.ndarray,Tuple[int, int]]]:
+    def detect(self, image: np.ndarray) -> List[Tuple[np.ndarray, Tuple[int, int]]]:
         """Detect objects
 
         Parameters
