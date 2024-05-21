@@ -37,7 +37,7 @@ class AIDetector(base_detector.BaseDetector):
                           config_str["n_classes"],
                           config_str["backbone"])
 
-        self.model = StarDist2D(basedir="./tmp")
+        self.model = StarDist2D(basedir="./tmp/")
         self.model.load_weights(f"{config_folder}/weights_best.h5")
         self.model.config = config
         self.model.thresholds = json.load(open(f"{config_folder}/thresholds.json", "r"))
