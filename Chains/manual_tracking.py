@@ -34,6 +34,6 @@ res = {
     "lim1": lim_2,
     "coords": coords
 }
-f = open(f"/Users/sintes/Desktop/NASGuillaume/Chains/Manual_tracks/{folder.split('/')[-1]}_{lim_1}.txt", "w") 
+f = open(f"/Users/sintes/Desktop/NASGuillaume/Chains/Manual_tracks/{folder.split('/')[-1]}_{lim_1}.txt", "w")
 f.write(json.dumps(res, separators=(",", ":"), indent=4))
 f.close()

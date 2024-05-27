@@ -10,7 +10,7 @@ import pandas as pd
 
 THICKNESS = 0.02
 PITCH_NORMAL = 3.37
-RADIUS_NORMAL = 0.47
+RADIUS_NORMAL = 0.47 / 2
 LENGTH = 8.5
 ETA = 18e-3 #Pa.s LC at 12%
 ASPECT_RATIO = 2 #0.18 or 2 : 0.18 Lighthill, 2 Gray and Hancock
@@ -22,16 +22,16 @@ def get_A0(n: int,
            long_axis: float=LONG_AXIS,
            small_axis: float=SMALL_AXIS) -> float:
     """Calculate the coefficient between force and velocity for a body chain of length n.
-    
+
     F0 = - A0 v"""
-    return  (4 * pi * eta * n * long_axis) / (log(2 * (n * long_axis) / ( small_axis)) - 0.5) 
+    return  (4 * pi * eta * n * long_axis) / (log(2 * (n * long_axis) / ( small_axis)) - 0.5)
 
 def get_D0(n: int,
            eta: float=ETA,
            long_axis: float=LONG_AXIS,
            small_axis: float=SMALL_AXIS) -> float:
     """Calculate the coefficient between torque and rotation velocity for a body chain of length n.
-    
+
     T0 = - D0 Omega"""
     return (16 * pi * eta * long_axis * n * small_axis ** 2 ) / 3
 
@@ -58,7 +58,7 @@ def get_A_flagella(length: float,
                    kt: float=get_kt(),
                    psi: float=get_psi())-> float:
     """Calculate the A coefficient for the flagella of length length.
-    
+
     F = -A v + B w
     T = -B v + D w"""
     return length * (kn * sin(psi) ** 2 + kt * cos(psi) ** 2) / cos(psi)
@@ -89,17 +89,17 @@ class Model(ABC):
     def calculate_body_rotation(self, flagella_rot: float=1) -> float:
         """Get the body rotation velocity from the flagella rotation velocity."""
         pass
-    
+
     @abstractmethod
     def calculate_velocity(self, flagella_rot: float=1) -> float:
         """Get the swimming velocity from the flagella rotation velocity."""
         pass
-    
+
     @abstractmethod
     def calculate_force_body(self, flagella_rot: float=1) -> float:
         """Calculate the force on the body."""
         pass
-    
+
     @abstractmethod
     def calculate_torque_body(self, flagella_rot: float=1) -> float:
         """Calculate the torque on the body."""
@@ -110,7 +110,7 @@ class Model(ABC):
         """Calculate the force on the flagella."""
         pass
 
-    
+
     @abstractmethod
     def calculate_torque_flagella(self, flagella_rot: float=1) -> float:
         """Calculate the torque on the flagella."""
@@ -126,7 +126,7 @@ class Model(ABC):
         if torque == true, the torque is constant, if not, the rotation is constant, the constant quantity is equalt to value"""
         if torque:
             flagella_rot = self.calculate_flagella_rot(value)
-        else:  
+        else:
             flagella_rot = value
         return {"n": self.n,
                 "flagella_rot": flagella_rot,
@@ -151,28 +151,28 @@ class NaiveModel(Model):
 
     def calculate_body_rotation(self, flagella_rot: float=1) -> float:
         return (self.Df * (self.A0 + self.Af) - self.Bf ** 2) * flagella_rot / (self.D0 * (self.A0 + self.Af))
-    
+
     def calculate_velocity(self, flagella_rot: float = 1) -> float:
         return self.Bf * flagella_rot / (self.A0 + self.Af)
 
     def calculate_force_body(self, flagella_rot: float = 1) -> float:
         v = self.calculate_velocity(flagella_rot)
         return - self.A0 * v
-    
+
     def calculate_force_flagella(self, flagella_rot: float = 1) -> float:
         v = self.calculate_velocity(flagella_rot)
         return - self.Af * v + self.Bf * flagella_rot
-    
+
     def calculate_torque_body(self, flagella_rot: float = 1) -> float:
         body_rot = self.calculate_body_rotation(flagella_rot)
         return - self.D0 * body_rot
-    
+
     def calculate_torque_flagella(self, flagella_rot: float = 1) -> float:
         v = self.calculate_velocity(flagella_rot)
         return - self.Bf * v + self.Df * flagella_rot
-    
+
     def calculate_flagella_rot(self, torque: float = 1)-> float:
-        return (self.A0 + self.Af) * torque / (self.Df * (self.A0 + self.Af) - self.Bf ** 2) 
+        return (self.A0 + self.Af) * torque / (self.Df * (self.A0 + self.Af) - self.Bf ** 2)
 
 class NaiveModelAlpha1(NaiveModel):
     """Naive model where we consider the full length of the flagella propelling."""
@@ -205,12 +205,12 @@ class SimpleInteractionModel(Model):
         Asum = self.At + self.A0
         beta = (self.Dt * Asum - self.Bt ** 2) / (Asum * (self.D0 + ((self.Bt * self.Bbf) / Asum) - self.Dbf))
         return beta * flagella_rot
-    
+
     def calculate_velocity(self, flagella_rot: float=1) -> float:
         """Get the swimming velocity from the flagella rotation velocity."""
         body_rot = self.calculate_body_rotation(flagella_rot)
         return (self.Bt * flagella_rot + self.Bbf * body_rot) / (self.At + self.A0)
-    
+
     def calculate_force_body(self, flagella_rot: float=1) -> float:
         """Calculate the force on the body."""
         return - self.A0 * self.calculate_velocity(flagella_rot)
@@ -218,24 +218,24 @@ class SimpleInteractionModel(Model):
     def calculate_torque_body(self, flagella_rot: float=1) -> float:
         """Calculate the torque on the body."""
         return - self.D0 * self.calculate_body_rotation(flagella_rot)
-    
+
     def calculate_force_flagella(self, flagella_rot: float=1) -> float:
         """Calculate the force on the flagella."""
         v = self.calculate_velocity(flagella_rot)
         body_rot = self.calculate_body_rotation(flagella_rot)
         return - self.At * v + self.Bt * flagella_rot + self.Bbf * body_rot
-    
+
     def calculate_torque_flagella(self, flagella_rot: float=1) -> float:
         """Calculate the torque on the flagella."""
         v = self.calculate_velocity(flagella_rot)
         body_rot = self.calculate_body_rotation(flagella_rot)
         return - self.Bt * v + self.Dbf * body_rot + self.Dt * flagella_rot
-    
+
     def calculate_flagella_rot(self, torque: float = 1)-> float:
         v = torque * (self.Bt * (self.D0 - self.Dbf) + self.Bbf * self.Dt) / (self.D0 * (self.Dt * (self.A0 + self.At) - self.Bt ** 2))
         Omega = torque / self.D0
         return (v * (self.A0 + self.At) - self.Bbf * Omega) / self.Bt
-    
+
 
 class InteractionModel2(Model):
     """Simple interaction model where we considerer that the flagella around the body will experience a rotation frequency of w + W."""
@@ -256,14 +256,14 @@ class InteractionModel2(Model):
     def calculate_body_rotation(self, flagella_rot: float=1) -> float:
         """Get the body rotation velocity from the flagella rotation velocity."""
         Asum = self.At + self.A0
-        beta = (self.Dt * Asum - self.Bt ** 2 - Asum * self.D0n1) / (Asum * (self.D0n + ((self.Bt * self.Bbf) / Asum) - self.Dbf)) 
+        beta = (self.Dt * Asum - self.Bt ** 2 - Asum * self.D0n1) / (Asum * (self.D0n + ((self.Bt * self.Bbf) / Asum) - self.Dbf))
         return beta * flagella_rot
-    
+
     def calculate_velocity(self, flagella_rot: float=1) -> float:
         """Get the swimming velocity from the flagella rotation velocity."""
         body_rot = self.calculate_body_rotation(flagella_rot)
         return (self.Bt * flagella_rot + self.Bbf * body_rot) / (self.At + self.A0)
-    
+
     def calculate_force_body(self, flagella_rot: float=1) -> float:
         """Calculate the force on the body."""
         return - self.A0 * self.calculate_velocity(flagella_rot)
@@ -271,13 +271,13 @@ class InteractionModel2(Model):
     def calculate_torque_body(self, flagella_rot: float=1) -> float:
         """Calculate the torque on the body."""
         return - self.D0n * self.calculate_body_rotation(flagella_rot) - self.D0n1 * flagella_rot
-    
+
     def calculate_force_flagella(self, flagella_rot: float=1) -> float:
         """Calculate the force on the flagella."""
         v = self.calculate_velocity(flagella_rot)
         body_rot = self.calculate_body_rotation(flagella_rot)
         return - self.At * v + self.Bt * flagella_rot + self.Bbf * body_rot
-    
+
     def calculate_torque_flagella(self, flagella_rot: float=1) -> float:
         """Calculate the torque on the flagella."""
         v = self.calculate_velocity(flagella_rot)
@@ -330,10 +330,10 @@ class RunnerModel:
         plt.plot(self.data["n"], self.data["T"], "o", label="$T_f$")
         plt.plot(self.data["n"], self.data["T0"] + self.data["T"], "o", label="$T_0 + T_f$")
         plt.xlabel("Chain length")
-        plt.ylabel("Torque") 
-        plt.legend() 
+        plt.ylabel("Torque")
+        plt.legend()
         plt.savefig(os.path.join(fig_folder, "torque.png"))
-        plt.close()   
+        plt.close()
 
         plt.figure()
         plt.plot(self.data["n"], self.data["body_rot"], "o")

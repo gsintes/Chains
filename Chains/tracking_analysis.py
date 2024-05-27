@@ -124,7 +124,7 @@ class Analysis():
         x = np.array(self.data["xBody"])
         y = np.array(self.data["yBody"])
         cov = np.cov(x, y)
-        val, vect = np.linalg.eig(cov) 
+        val, vect = np.linalg.eig(cov)
         val = list(val)
         i = val.index(max(val))
         self.main_axis = vect[:, i]

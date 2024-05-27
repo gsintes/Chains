@@ -318,12 +318,9 @@ class ObjectTracker:
         """Make a image showing the detection."""
         colors = [ObjectTracker.hex_to_rgb(color) for color in mcolors.TABLEAU_COLORS.values()]
         image_to_draw = cv2.merge([image, image, image])
-        font = cv2.FONT_HERSHEY_SIMPLEX
         for attributes in tracking_data:
             color = colors[int(attributes["id"]) % len(colors)]
             center = (int(attributes["xcenter"]), int(attributes["ycenter"]))
-            center_writing = (int(attributes["xcenter"]),
-                            int(attributes["ycenter"] + attributes["major_axis"]))
             image_to_draw = cv2.ellipse(img=image_to_draw,
                                 center=center,
                                 axes=(int(attributes["major_axis"]), int(attributes["minor_axis"])),

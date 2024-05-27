@@ -15,11 +15,9 @@ import preprocessing
 def main(folder_path: str) -> str:
     exp_name = folder_path.split("/")[-1]
     print(exp_name)
-
     image_list = [os.path.join(folder_path, file) for file
                 in os.listdir(folder_path) if file.endswith(".tif")]
     image_list.sort()
-    image_list = image_list[0:50]
     param_file = os.path.join(folder_path, "params.json")
     try:
         with open(param_file, "r") as f:
@@ -68,7 +66,7 @@ def main(folder_path: str) -> str:
     for i, im in enumerate(image_list[1:]):
         per = 100 * i / len(image_list)
         if per > count + 5:
-            print(f"{per:.2f}2%")
+            print(f"{per:.0f}%")
             count += 5
         frame = preprocessing.convert_16to8bits(im, max_int)
         im_data = tracker.process(frame)
@@ -97,5 +95,5 @@ if __name__=="__main__":
     #         with open(log_file, 'a') as file:
     #             exp_name = f.split("/")[-1]
     #             file.write(f"{exp_name} error at {datetime.now()}: {e.__repr__}\n")
-    folder = "/Users/sintes/Desktop/2023-10-31_11h15m10s"
+    folder = "/Volumes/Chains/ChainFormation/2024-05-08_14h07m56s"
     main(folder)

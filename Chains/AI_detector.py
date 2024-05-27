@@ -10,8 +10,6 @@ import cv2
 
 from base_detector import BaseDetector
 
-import time
-
 class AIDetector(BaseDetector):
     """Detector based on AI (StarDist) for bacteria detection."""
     def __init__(self, config_folder: str) -> None:

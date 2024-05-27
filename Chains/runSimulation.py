@@ -13,11 +13,11 @@ from scipy.stats import lognorm
 class ChainGenerator:
     def __init__(self) -> None:
         raise NotImplementedError
-    
+
     def sample_vel(self) -> float:
         """Sample a bacteria speed"""
         raise NotImplementedError
-    
+
     def generate(self, n: int) -> float:
         """Generate a chain of length n"""
         vel_bacteria: np.ndarray[float] = np.zeros(n)
@@ -33,7 +33,7 @@ class GaussianChainGenerator(ChainGenerator):
 
     def sample_vel(self) -> float:
         return normal(self.mean, self.std)
-    
+
 class DataChainGenerator(ChainGenerator):
     def __init__(self, data: pd.DataFrame, norm: bool) -> None:
         """Chain generator where the swimming speed follows the experimental distribution."""
@@ -62,7 +62,7 @@ class LogNormalChainGenerator(ChainGenerator):
 
     def sample_vel(self) -> float:
         return lognorm.rvs(s=self.s, scale=self.scale)
-    
+
 class Simulation:
     def __init__(self, chain_generator: ChainGenerator) -> None:
         self.chain_generator = chain_generator
@@ -86,7 +86,7 @@ class Simulation:
         self.data = data
 
     def save_data(self, folder, file) -> None:
-        """Save the data into a dataframe""" 
+        """Save the data into a dataframe"""
         self.data.to_csv(os.path.join(folder, file))
 
 def get_simu_data(data: pd.DataFrame, from_data: bool = False, max_length: int = 8, nb_chains: int = 10000) -> Tuple[Simulation, Simulation]:
@@ -103,7 +103,7 @@ def get_simu_data(data: pd.DataFrame, from_data: bool = False, max_length: int =
         simu = Simulation(GaussianChainGenerator(mean, std))
         simu_norm = Simulation(GaussianChainGenerator(1, std / mean))
     simu.generate_chains(max_length, nb_chains)
-    simu_norm.generate_chains(max_length, nb_chains)   
+    simu_norm.generate_chains(max_length, nb_chains)
     return simu, simu_norm
 
 if __name__=="__main__":
@@ -116,7 +116,6 @@ if __name__=="__main__":
     n = np.arange(1,11)
     plt.plot(n, 1 + np.sqrt(np.log(n)), label="$log(n)^{0.5}$")
     plt.legend()
- 
 
     data = simu.data
     lengths = data.length.unique()
