@@ -1,12 +1,9 @@
 """Module to detect chains in a track."""
-from typing import List, Tuple, Callable, Any
+from typing import List, Tuple, Any, Dict
 from collections import defaultdict
 
 import numpy as np
 import pandas as pd
-
-from tracking_analysis import Analysis
-
 
 def get_ellipse_points(x: float, y: float, a: float, b: float, angle: float, num_points: int =100) -> np.ndarray:
     """
@@ -40,7 +37,7 @@ def axes_to_check(ellipse1_points: np.ndarray, ellipse2_points: np.ndarray)-> np
     normals2 = edge_normals(ellipse2_points)
     return np.vstack((normals1, normals2))
 
-def ellipses_overlap(ellipse1: Tuple[float, float, float, float], ellipse2: Tuple[float, float, float, float]) -> bool:
+def ellipses_overlap(ellipse1: Tuple[float, float, float, float, float], ellipse2: Tuple[float, float, float, float, float]) -> bool:
     """
     Checks if two ellipses overlap using the Separating Axis Theorem.
     """
@@ -55,28 +52,26 @@ def ellipses_overlap(ellipse1: Tuple[float, float, float, float], ellipse2: Tupl
             return False
     return True
 
-
-
-def find_groups(data: pd.DataFrame, are_connected: Callable[[Tuple, Tuple], bool])-> List[List[int]]:
+def find_groups(data: pd.DataFrame)-> List[List[int]]:
     """
     Finds groups of connected ellipses.
     Parameters:
     :param data: DataFrame with columns id, xBody, yBody, bodyMajorAxisLength, bodyMinorAxisLength, tBody.
-    :param are_connected: Function that takes two ellipses and returns True if they overlap, otherwise False.
     :return: List of lists, each sub-list represents a group of connected ellipses.
     """
-    ellipses = {row.id: (row.xBody, row.yBody, row.bodyMajorAxisLength, row.bodyMinorAxisLength, row.tBody)
+    ellipses = {row.id: (float(row.xBody), float(row.yBody), float(row.bodyMajorAxisLength), float(row.bodyMinorAxisLength), float(row.tBody))
                 for row in data.itertuples(index=False)}
     # Create the graph
     ids = list(ellipses.keys())
     graph = defaultdict(list)
     for i, id1 in enumerate(ids):
         for id2 in ids[i+1:]:
-            if are_connected(ellipses[id1], ellipses[id2]):
+            if ellipses_overlap(ellipses[id1], ellipses[id2]):
                 graph[id1].append(id2)
                 graph[id2].append(id1)
-    visited = [False] * len(ids)
+    visited = {id: False for id in ids}
     groups = []
+
     def dfs(node, visited, group):
         """Find connected components of a graph using depth-first search."""
         visited[node] = True
@@ -85,24 +80,79 @@ def find_groups(data: pd.DataFrame, are_connected: Callable[[Tuple, Tuple], bool
             if not visited[neighbor]:
                 dfs(neighbor, visited, group)
 
-    for i in range(len(ids)):
-        if not visited[i]:
+    for id in ids:
+        if not visited[id]:
             group: List[int] = []
-            dfs(i, visited, group)
+            dfs(id, visited, group)
             groups.append(group)
     return groups
 
+class ChainDetector:
+    """Make the chains from the data."""
+    def __init__(self, data: pd.DataFrame):
+        self.data = data
+        self.chain_data = pd.DataFrame(columns=["id", "chain_length", "imageNumber"])
+        self.chain_dict: Dict[int, List[int]] = {}
+        self.id: List[int] = []
+        self.imageNumber: List[int] = []
+        self.chain_length: List[int] = []
+        self.bact_dict: Dict[int, int] = {}
+        self.id_count = 0
 
+    def prep_data(self, step: int) -> pd.DataFrame:
+        """Prepare the data for the analysis."""
+        data = self.data.copy()
+        data = data[self.data.imageNumber == step]
+        data["tBody"] = np.pi - data["tBody"]
+        data["bodyMajorAxisLength"] = data["bodyMajorAxisLength"] + 4
+        data["bodyMinorAxisLength"] = data["bodyMinorAxisLength"] * 0.75
+        data = data[['id', 'xBody', 'yBody', 'bodyMajorAxisLength', 'bodyMinorAxisLength',
+                               'tBody']]
+        return data
 
-if __name__ == "__main__":
-    ana = Analysis("/Users/sintes/Desktop/ImageSeq")
-    ana.calculate_velocity()
-    data = ana.clean(data=ana.data_ind, scale=6.24, frame_rate=30, bactLength=10)
-    data["bodyMajorAxisLength"] = data["bodyMajorAxisLength"] + 4
-    data["tBody"] = np.pi - data["tBody"]
-    data = data[data.imageNumber == 0]
-    data = data[['id', 'xBody', 'yBody', 'bodyMajorAxisLength', 'bodyMinorAxisLength',
-       'tBody']]
+    def initialize(self) -> None:
+        """Initialize the analysis."""
+        data = self.prep_data(0)
+        groups = find_groups(data)
+        for group in groups:
+            self.chain_dict[self.id_count] = group
+            for bact in group:
+                self.bact_dict[bact] = self.id_count
+            self.id_count += 1
+        self.chain_length = [len(group) for group in groups]
+        self.id = list(self.chain_dict.keys())
+        self.imageNumber = [0 for _ in self.id]
 
-    # print(data)
-    print(find_groups(data, ellipses_overlap))
+    def clean_length(self) -> None:
+        """Clean the chain length."""
+        lengths = self.chain_data.groupby("id")["chain_length"].agg(pd.Series.mode)
+        print(lengths)
+
+    def process(self) -> Tuple[pd.DataFrame, Dict[int, List[int]]]:
+        """Performs the analysis."""
+        self.initialize()
+        for step in range(1, self.data.imageNumber.max() + 1):
+            data = self.prep_data(step)
+            groups = find_groups(data)
+            for group in groups:
+                chain_ids = [self.bact_dict.get(bact, -1) for bact in group]
+                set_chain_ids = list(set(chain_ids))
+                if len(set_chain_ids) == 1:
+                    if set_chain_ids[0] == -1:
+                        id = self.id_count
+                        for bact in group:
+                            self.bact_dict[bact] = id
+                        self.chain_dict[id] = group
+                        self.id_count += 1
+                    else:
+                        id = set_chain_ids[0]
+                    self.id.append(id)
+                    self.chain_length.append(len(group))
+                    self.imageNumber.append(step)
+
+                else:
+                    print(step, chain_ids, group)
+                    raise Exception("Error in the chain detection.")
+        self.chain_data = pd.DataFrame({"id": self.id, "chain_length": self.chain_length, "imageNumber": self.imageNumber})
+        self.clean_length()
+        return self.chain_data, self.chain_dict
