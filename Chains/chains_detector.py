@@ -110,27 +110,15 @@ class ChainDetector:
                                'tBody']]
         return data
 
-    def initialize(self) -> None:
-        """Initialize the analysis."""
-        data = self.prep_data(0)
-        groups = find_groups(data)
-        for group in groups:
-            self.chain_dict[self.id_count] = group
-            for bact in group:
-                self.bact_dict[bact] = self.id_count
-            self.id_count += 1
-        self.chain_length = [len(group) for group in groups]
-        self.id = list(self.chain_dict.keys())
-        self.imageNumber = [0 for _ in self.id]
-
     def clean_length(self) -> None:
         """Clean the chain length."""
         lengths = self.chain_data.groupby("id")["chain_length"].agg(pd.Series.mode)
+        for id in self.chain_data["id"].unique():
+            self.chain_data.loc[self.chain_data["id"] == id, "chain_length"] = lengths[id]
 
     def process(self) -> Tuple[pd.DataFrame, Dict[int, List[int]]]:
         """Performs the analysis."""
-        self.initialize()
-        for step in range(1, self.data.imageNumber.max() + 1):
+        for step in range(self.data.imageNumber.max() + 1):
             data = self.prep_data(step)
             groups = find_groups(data)
             for group in groups:
