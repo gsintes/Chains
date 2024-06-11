@@ -102,7 +102,7 @@ class ChainDetector:
     def prep_data(self, step: int) -> pd.DataFrame:
         """Prepare the data for the analysis."""
         data = self.data.copy()
-        data = data[self.data.imageNumber == step]
+        data = data[data.imageNumber == step]
         data["tBody"] = np.pi - data["tBody"]
         data["bodyMajorAxisLength"] = data["bodyMajorAxisLength"] + 4
         data["bodyMinorAxisLength"] = data["bodyMinorAxisLength"] * 0.75
@@ -116,12 +116,14 @@ class ChainDetector:
         for id in self.chain_data["id"].unique():
             self.chain_data.loc[self.chain_data["id"] == id, "chain_length"] = lengths[id]
 
-    def process(self) -> Tuple[pd.DataFrame, Dict[int, List[int]]]:
+    def process(self) -> Tuple[pd.DataFrame, Dict[int, List[int]]]: #TODO fix cases :  fusion, sides:apparition,dispartion
         """Performs the analysis."""
-        for step in range(self.data.imageNumber.max() + 1):
+        for step in self.data["imageNumber"].unique():
+            visited: List[int] = []
             data = self.prep_data(step)
             groups = find_groups(data)
             for group in groups:
+
                 chain_ids = [self.bact_dict.get(bact, -1) for bact in group]
                 set_chain_ids = list(set(chain_ids))
                 if len(set_chain_ids) == 1:
@@ -133,6 +135,10 @@ class ChainDetector:
                         self.id_count += 1
                     else:
                         id = set_chain_ids[0]
+                        if len(group) != len(self.chain_dict[id]):
+                            if id in visited:
+                                continue
+                            visited.append(id)
                     self.id.append(id)
                     self.chain_length.append(len(group))
                     self.imageNumber.append(step)
