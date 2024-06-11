@@ -46,7 +46,6 @@ class Visualisation:
             font = cv2.FONT_HERSHEY_SIMPLEX
 
             sub_data = self.data[self.data.imageNumber == i]
-         
             for _, row in sub_data.iterrows():
                 id_obj = int(row.id)
                 color = colors[id_obj % len(colors)]

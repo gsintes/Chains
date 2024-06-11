@@ -8,6 +8,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+from chains_detector import ChainDetector
+
 np.seterr(all='raise')
 
 class Analysis():
@@ -45,21 +47,22 @@ class Analysis():
 
         return df
 
-
-    def calculate_velocity(self) -> None:
+    @staticmethod
+    def calculate_velocity(data: pd.DataFrame, scale: float) -> pd.DataFrame:
         """Calculate velocities."""
-        ids = self.data_ind["id"].unique()
+        ids = data["id"].unique()
         ids.sort()
         for id in ids:
-            data = self.data_ind.loc[self.data_ind["id"] == id]
+            sub_data = data.loc[data["id"] == id]
             coord = ["xBody", "yBody"]
             for ax in coord:
-                pos_diff = data[ax].diff() / self.scale
-                time_diff = data["time"].diff()
+                pos_diff = sub_data[ax].diff() / scale
+                time_diff = sub_data["time"].diff()
 
                 velocity = pos_diff / time_diff
-                self.data_ind.loc[velocity.index, ax[0] + "Vel"] = velocity
-        self.data_ind["velocity"] = np.sqrt(self.data_ind["xVel"] ** 2 + self.data_ind["yVel"] ** 2)
+                data.loc[velocity.index, ax[0] + "Vel"] = velocity
+        data["velocity"] = np.sqrt(data["xVel"] ** 2 + data["yVel"] ** 2)
+        return data
 
 
     @staticmethod
@@ -79,7 +82,7 @@ class Analysis():
         return data
 
     def trace_image(self) -> None:
-        """Draw the image with superimposed trajectories."""
+        """Draw the image with superimposed trajectories.""" #TODO: change for chain data
         plt.figure()
         plt.xlim((0, 1024))
         plt.ylim((0, 1024))
@@ -94,7 +97,7 @@ class Analysis():
         plt.close()
 
     def main_direction(self) -> None:
-        """Detect the main direction of the swimming."""
+        """Detect the main direction of the swimming.""" #TODO: rewrite this function
         x = np.array(self.data_ind["xBody"])
         y = np.array(self.data_ind["yBody"])
         cov = np.cov(x, y)
@@ -112,12 +115,22 @@ class Analysis():
         ps = mean_xvel * self.main_axis[0] + mean_yvel * self.main_axis[1]
         return np.sign(ps)
 
+    def get_chain_position(self) -> None:
+        """Get the chain position."""
+        ids = self.chain_dict.keys()
+        for id in ids:
+            ...
+
     def process(self) -> pd.DataFrame:
         """Performs the analysis."""
+        self.data_ind = Analysis.calculate_velocity(self.data_ind, self.scale)
+        c_detector = ChainDetector(Analysis.clean(self.data_ind, self.scale, self.frameRate))
+        self.chain_data, self.chain_dict = c_detector.process()
+        self.get_chain_position()
         self.main_direction()
         self.trace_image()
-        self.calculate_velocity()
-        Analysis.clean(self.data_ind, self.scale, self.frameRate)
+        self.chain_data = self.calculate_velocity(self.chain_data)
+        self.chain_data = Analysis.clean(self.chain_data, self.scale, self.frameRate)
 
         ids = self.data_ind["id"].unique()
         chain_length: List[int] = []
@@ -143,7 +156,7 @@ if __name__ == "__main__":
     # folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     # folder_list.sort()
     # for folder in folder_list:
-    folder ="/Users/sintes/Desktop/2023-10-31_11h15m10s"
+    folder ="/Users/sintes/Desktop/ImageSeq"
     print(folder)
     analysis = Analysis(folder)
     if len(analysis.data_ind) > 0:

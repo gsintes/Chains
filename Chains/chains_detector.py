@@ -126,7 +126,6 @@ class ChainDetector:
     def clean_length(self) -> None:
         """Clean the chain length."""
         lengths = self.chain_data.groupby("id")["chain_length"].agg(pd.Series.mode)
-        print(lengths)
 
     def process(self) -> Tuple[pd.DataFrame, Dict[int, List[int]]]:
         """Performs the analysis."""
