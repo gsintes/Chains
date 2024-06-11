@@ -118,8 +118,10 @@ class Analysis():
     def get_chain_position(self) -> None:
         """Get the chain position."""
         ids = self.chain_dict.keys()
-        for id in ids:
-            ...
+        for id in ids[0]:
+            bacts = self.chain_dict[id]
+            sub_data = self.data_ind.loc[self.data_ind["id"].isin(bacts)]
+            print(sub_data)
 
     def process(self) -> pd.DataFrame:
         """Performs the analysis."""
