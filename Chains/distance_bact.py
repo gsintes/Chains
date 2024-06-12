@@ -44,7 +44,7 @@ def load_data(path: str, frame_rate: int) -> pd.DataFrame:
         """Load the data from the database."""
         dbfile = os.path.join(path, "Tracking_Result/tracking.db")
         con = sqlite3.connect(dbfile)
-        df = pd.read_sql_query('SELECT xBody, yBody, bodyMajorAxisLength, imageNumber, id FROM tracking', con)
+        df = pd.read_sql_query('SELECT xBody, yBody, tBody, bodyMajorAxisLength, bodyMinorAxisLength, imageNumber, id FROM tracking', con)
         con.close()
         df["time"] = df["imageNumber"] / frame_rate
 
@@ -75,7 +75,7 @@ def detect_plateau_value(sequence: pd.Series) -> float:
     for i, val_std in enumerate(std_moving):
         if val_std < mean - std:
             values.append(list_seq[i])
-    if len(values) != 0:    
+    if len(values) != 0:
         return np.mean(values)
     else:
         return sequence.mean()
