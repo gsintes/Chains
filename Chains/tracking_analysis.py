@@ -2,6 +2,7 @@
 
 import os
 from typing import List
+import json
 
 import sqlite3
 import pandas as pd
@@ -82,15 +83,15 @@ class Analysis():
         return data
 
     def trace_image(self) -> None:
-        """Draw the image with superimposed trajectories.""" #TODO: change for chain data
+        """Draw the image with superimposed trajectories."""
         plt.figure()
         plt.xlim((0, 1024))
         plt.ylim((0, 1024))
         x = np.linspace(0, 1024)
         y = self.main_axis[1] * (x - 512) / self.main_axis[0] + 512
-        ids = self.data_ind["id"].unique()
+        ids = self.chain_data["id"].unique()
         for id in ids:
-            sub_data: pd.DataFrame = self.data_ind.loc[self.data_ind["id"]==id]
+            sub_data: pd.DataFrame = self.chain_data.loc[self.chain_data["id"]==id]
             plt.plot(sub_data["xBody"], 1024 - sub_data["yBody"], ".", markersize=1)
         plt.plot(x, y, "k--")
         plt.savefig(os.path.join(self.path, "Figure/trace.png"))
@@ -109,7 +110,7 @@ class Analysis():
     def sign_trajectory(self, id) -> int:
         """Get a sign of the trajectory.
         Return 1 if swimming one way, -1 otherwise. Sign arbitrary."""
-        subdata: pd.DataFrame = self.data_ind.loc[self.data_ind["id"]==id]
+        subdata: pd.DataFrame = self.chain_data.loc[self.chain_data["id"]==id]
         mean_xvel = subdata["xVel"].mean()
         mean_yvel = subdata["yVel"].mean()
         ps = mean_xvel * self.main_axis[0] + mean_yvel * self.main_axis[1]
@@ -118,28 +119,35 @@ class Analysis():
     def get_chain_position(self) -> None:
         """Get the chain position."""
         ids = self.chain_dict.keys()
-        for id in ids[0]:
+        for id in ids:
             bacts = self.chain_dict[id]
-            sub_data = self.data_ind.loc[self.data_ind["id"].isin(bacts)]
-            print(sub_data)
+            sub_ind_data = self.data_ind[self.data_ind["id"].isin(bacts)]
+            x_bodys = sub_ind_data.groupby("imageNumber")["xBody"].mean()
+            x_bodys.sort_index(inplace=True)
+            y_bodys = sub_ind_data.groupby("imageNumber")["yBody"].mean()
+            y_bodys.sort_index(inplace=True)
+            sub_chain_data = self.chain_data[self.chain_data["id"] == id]
+            self.chain_data.loc[sub_chain_data.index, "xBody"] = x_bodys.values
+            self.chain_data.loc[sub_chain_data.index, "yBody"] = y_bodys.values
 
     def process(self) -> pd.DataFrame:
         """Performs the analysis."""
         self.data_ind = Analysis.calculate_velocity(self.data_ind, self.scale)
         c_detector = ChainDetector(Analysis.clean(self.data_ind, self.scale, self.frameRate))
         self.chain_data, self.chain_dict = c_detector.process()
+        self.chain_data["time"] = self.chain_data["imageNumber"] / self.frameRate
         self.get_chain_position()
         self.main_direction()
         self.trace_image()
-        self.chain_data = self.calculate_velocity(self.chain_data)
+        self.chain_data = self.calculate_velocity(self.chain_data, self.scale)
         self.chain_data = Analysis.clean(self.chain_data, self.scale, self.frameRate)
 
-        ids = self.data_ind["id"].unique()
+        ids = self.chain_data["id"].unique()
         chain_length: List[int] = []
         mean_vel: List[float] = []
         signs: List[int] = []
         for id in ids:
-            data: pd.DataFrame = self.data_ind.loc[self.data_ind["id"] == id]
+            data: pd.DataFrame = self.chain_data.loc[self.chain_data["id"] == id]
             chain_length.append(int(min(data["chain_length"])))
             mean_vel.append(data["velocity"].mean())
             signs.append(self.sign_trajectory(id))
@@ -151,6 +159,8 @@ class Analysis():
         single_vel = self.velocity_data.loc[self.velocity_data["chain_length"] == 1, "velocity"].mean()
         self.velocity_data["Single_vel"] = single_vel
         self.velocity_data["Normalized_vel"] = self.velocity_data["velocity"] / single_vel
+        self.chain_data.to_csv(os.path.join(self.path, "Tracking_Result/chain_data.csv"), index=None)
+        json.dump(self.chain_dict, open(os.path.join(self.path, "Tracking_Result/chain_dict.json"), "w"))
         return self.velocity_data
 
 if __name__ == "__main__":

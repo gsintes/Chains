@@ -116,7 +116,7 @@ class ChainDetector:
         for id in self.chain_data["id"].unique():
             self.chain_data.loc[self.chain_data["id"] == id, "chain_length"] = lengths[id]
 
-    def process(self) -> Tuple[pd.DataFrame, Dict[int, List[int]]]: #TODO fix cases :  fusion, sides:apparition,dispartion
+    def process(self) -> Tuple[pd.DataFrame, Dict[int, List[int]]]: #TODO fix cases : fusion, sides:apparition,dispartion
         """Performs the analysis."""
         for step in self.data["imageNumber"].unique():
             visited: List[int] = []
