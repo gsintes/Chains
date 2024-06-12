@@ -10,6 +10,7 @@ from filterpy.common import Q_discrete_white_noise
 import matplotlib.colors as mcolors
 
 from base_detector import BaseDetector
+import preprocessing
 
 
 class Particle:
@@ -307,16 +308,9 @@ class ObjectTracker:
         for i in to_delete:
             self.particles.pop(i)
 
-    @staticmethod
-    def hex_to_rgb(value):
-        """Transform an hexadecimal image in RGB"""
-        value = value.lstrip('#')
-        lv = len(value)
-        return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
-
     def make_verif_image(self, image: np.ndarray, tracking_data: List[Dict[str, float]]) -> None:
         """Make a image showing the detection."""
-        colors = [ObjectTracker.hex_to_rgb(color) for color in mcolors.TABLEAU_COLORS.values()]
+        colors = [preprocessing.hex_to_rgb(color) for color in mcolors.TABLEAU_COLORS.values()]
         image_to_draw = cv2.merge([image, image, image])
         font = cv2.FONT_HERSHEY_SIMPLEX
         for attributes in tracking_data:

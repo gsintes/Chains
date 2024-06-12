@@ -9,8 +9,7 @@ import cv2
 import numpy as np
 import matplotlib.colors as mcolors
 
-from tracker import Tracker
-from preprocessing import convert_16to8bits
+from preprocessing import convert_16to8bits, hex_to_rgb
 from distance_bact import load_data, NotEnoughDataError
 
 
@@ -40,7 +39,7 @@ class Visualisation:
 
     def make_verif_image(self, i: int) -> None:
             """Make a image showing the detection."""
-            colors = [Tracker.hex_to_rgb(color) for color in mcolors.TABLEAU_COLORS.values()]
+            colors = [hex_to_rgb(color) for color in mcolors.TABLEAU_COLORS.values()]
             image = convert_16to8bits(self.image_list[i], self.max_int)
             image_to_draw = cv2.merge([image, image, image])
             font = cv2.FONT_HERSHEY_SIMPLEX
