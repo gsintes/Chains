@@ -5,6 +5,8 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
+
+
 def get_ellipse_points(x: float, y: float, a: float, b: float, angle: float, num_points: int =100) -> np.ndarray:
     """
     Returns points on the ellipse perimeter for given parameters.
@@ -92,7 +94,7 @@ class ChainDetector:
     def __init__(self, data: pd.DataFrame):
         self.data = data
         self.chain_data = pd.DataFrame(columns=["id", "chain_length", "imageNumber"])
-        self.chain_dict: Dict[int, List[int]] = {}
+        self.chain_dict: Dict[int, Dict[str, List[int]]]= {}
         self.id: List[int] = []
         self.imageNumber: List[int] = []
         self.chain_length: List[int] = []
@@ -112,13 +114,15 @@ class ChainDetector:
 
     def clean_length(self) -> None:
         """Clean the chain length."""
-        lengths = self.chain_data.groupby("id")["chain_length"].agg(pd.Series.mode)
+        lengths = self.chain_data.groupby("id")["chain_length"].agg(pd.Series.mode).to_dict()
         for id in self.chain_data["id"].unique():
             self.chain_data.loc[self.chain_data["id"] == id, "chain_length"] = lengths[id]
 
-    def process(self) -> Tuple[pd.DataFrame, Dict[int, List[int]]]: #TODO fix cases : fusion, sides:apparition,dispartion
+    def process(self) -> Tuple[pd.DataFrame, Dict[int, Dict[str, List[int]]]]: #TODO fix cases : fusion, sides:apparition,dispartion
         """Performs the analysis."""
-        for step in self.data["imageNumber"].unique():
+        im_numbers = self.data["imageNumber"].unique()
+        im_numbers.sort()
+        for step in im_numbers:
             visited: List[int] = []
             data = self.prep_data(step)
             groups = find_groups(data)
@@ -131,21 +135,52 @@ class ChainDetector:
                         id = self.id_count
                         for bact in group:
                             self.bact_dict[bact] = id
-                        self.chain_dict[id] = group
+                        self.chain_dict[id] = {"bacts": group, "steps": [step]}
                         self.id_count += 1
                     else:
                         id = set_chain_ids[0]
-                        if len(group) != len(self.chain_dict[id]):
+                        if len(group) != len(self.chain_dict[id]["bacts"]):
                             if id in visited:
                                 continue
                             visited.append(id)
+                        self.chain_dict[id]["bacts"] = list(set(group + self.chain_dict[id]["bacts"]))
+                        self.chain_dict[id]["steps"].append(step)
                     self.id.append(id)
+
                     self.chain_length.append(len(group))
                     self.imageNumber.append(step)
 
+
                 else:
-                    print(step, chain_ids, group)
-                    raise Exception("Error in the chain detection.")
+                    if len(set_chain_ids) == 2:
+                        if -1 in set_chain_ids:
+                            id = set_chain_ids[0]
+                            if id == -1:
+                                id = set_chain_ids[1]
+                            for bact in group:
+                                self.bact_dict[bact] = id
+                            self.chain_dict[id]["bacts"] = list(set(group + self.chain_dict[id]["bacts"]))
+                            self.chain_dict[id]["steps"].append(step)
+                            self.id.append(id)
+                            self.chain_length.append(len(self.chain_dict[id]["bacts"]))
+                            self.imageNumber.append(step)
+                        else:
+                            id = self.id_count
+                            print(group)
+                            for i in set_chain_ids:
+                                print(self.chain_dict[i]["bacts"])
+                            for i in set_chain_ids:
+                                for bact in self.chain_dict[i]["bacts"]:
+                                    self.bact_dict[bact] = id
+                            self.chain_dict[id] = {"bacts": group, "steps": [step]}
+                            self.id.append(id)
+                            self.chain_length.append(len(self.chain_dict[id]["bacts"]))
+                            self.imageNumber.append(step)
+                            print("Fusion detected. Step: ", step, "previous id: ", set_chain_ids, "new id: ", id)
+
+                            self.id_count += 1
+                    else:
+                        raise Exception("More than  in a group.")
         self.chain_data = pd.DataFrame({"id": self.id, "chain_length": self.chain_length, "imageNumber": self.imageNumber})
         self.clean_length()
         return self.chain_data, self.chain_dict

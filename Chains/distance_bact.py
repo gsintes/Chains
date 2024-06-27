@@ -112,12 +112,12 @@ class DistanceCalculator:
 
         pool = mp.Pool(mp.cpu_count() -1)
         _ = pool.starmap(self.distance_pair, pairs)
-        
+
     def distance_pair(self, i: int, j: int) -> None:
         """Calculate the distance for all times."""
         data = self.data[self.data["id"].isin((i, j))]
         grouped = data.groupby("imageNumber")
-        
+
         grouped_data = pd.DataFrame()
         grouped_data["nb"] = grouped.imageNumber.value_counts()
         grouped_data = grouped_data[grouped_data.nb==2]
@@ -265,7 +265,7 @@ def task(folder, res_file, pair_distances, tracking_data, apparitions, i, j):
         with open(res_file, "a") as file:
             f = folder.split("/")[-1]
             file.write(f"{f},{int(ana.i)},{int(ana.j)},{int(ana.last_im)},0\n")
-                        
+
 def distance_analysis_folder(folder: str,
                              res_file: str,
                              pair_distances: pd.DataFrame,

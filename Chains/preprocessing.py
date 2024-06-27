@@ -5,7 +5,7 @@ from typing import List, Tuple
 import cv2
 import numpy as np
 from skimage.filters.thresholding import threshold_otsu
-from skimage import morphology
+from skimage import morphology, exposure
 from skimage.filters import gaussian
 from skimage.measure import label, regionprops
 
@@ -118,3 +118,17 @@ def hex_to_rgb(value):
         value = value.lstrip('#')
         lv = len(value)
         return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+
+def contrast_enhancement(image: np.ndarray) -> np.ndarray:
+    """Enhance the contrast of the image."""
+    if len(image.shape) == 3:
+        image_enhanced = image.copy()
+        for i in range(3):
+            image_enhanced[:, :, i] = contrast_enhancement(image_enhanced[:, :, i])
+        return image_enhanced
+    elif len(image.shape) == 2:
+        p15, p100 = np.percentile(image, (18, 100))
+        img_rescale = exposure.rescale_intensity(image, in_range=(p15, p100))
+        return img_rescale
+    else:
+        raise IndexError("Not the good dimension.")

@@ -1,7 +1,6 @@
 """Analyse the evolution of a sample with time."""
 
 import os
-import multiprocessing as mp
 
 import pandas as pd
 import matplotlib.pyplot as plt

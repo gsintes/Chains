@@ -3,7 +3,7 @@ title = "FastTrack cfg"
 [parameters]
 lightBack = 1
 maxArea = 5000
-maxDist = 50
+maxDist = 10
 maxTime = 100
 methBack = 1
 minArea = 100
