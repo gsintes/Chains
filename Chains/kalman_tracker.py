@@ -310,6 +310,7 @@ class ObjectTracker:
 
     def make_verif_image(self, image: np.ndarray, tracking_data: List[Dict[str, float]]) -> None:
         """Make a image showing the detection."""
+        image = preprocessing.contrast_enhancement(image)
         colors = [preprocessing.hex_to_rgb(color) for color in mcolors.TABLEAU_COLORS.values()]
         image_to_draw = cv2.merge([image, image, image])
         font = cv2.FONT_HERSHEY_SIMPLEX
