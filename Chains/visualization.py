@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 import matplotlib.colors as mcolors
 
-from preprocessing import convert_16to8bits, hex_to_rgb
+from preprocessing import convert_16to8bits, hex_to_rgb, contrast_enhancement
 from distance_bact import load_data, NotEnoughDataError
 
 
@@ -50,9 +50,11 @@ class Visualisation:
             """Make a image showing the detection."""
             colors = [hex_to_rgb(color) for color in mcolors.TABLEAU_COLORS.values()]
             image = convert_16to8bits(self.image_list[i], self.max_int)
+            image = contrast_enhancement(image)
             image_to_draw = cv2.merge([image, image, image])
             font = cv2.FONT_HERSHEY_SIMPLEX
             sub_data = self.data[self.data.imageNumber == i]
+            written: List[int] = []
             for _, row in sub_data.iterrows():
                 id_obj = self.bact_dict[int(row.id)]
                 color = colors[id_obj % len(colors)]
@@ -64,7 +66,9 @@ class Visualisation:
                                     axes=(int(row.bodyMajorAxisLength), int(row.bodyMinorAxisLength)),
                                     angle=180 * (1 - row.tBody / np.pi), startAngle=0, endAngle=360,
                                     color=color, thickness=1)
-                image_to_draw = cv2.putText(image_to_draw, str(id_obj), org=center_writing, fontFace=font, fontScale=1, color=color)
+                if id_obj not in written:
+                    image_to_draw = cv2.putText(image_to_draw, str(id_obj), org=center_writing, fontFace=font, fontScale=1, color=color)
+                    written.append(id_obj)
             cv2.imwrite(os.path.join(self.fig_folder, f"tracked{i:06d}.png"), image_to_draw)
 
 if __name__=="__main__":
