@@ -95,5 +95,5 @@ if __name__=="__main__":
     #         with open(log_file, 'a') as file:
     #             exp_name = f.split("/")[-1]
     #             file.write(f"{exp_name} error at {datetime.now()}: {e.__repr__}\n")
-    folder = "/Users/sintes/Desktop/ImageSeq"
+    folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 13.7%/2023-11-27_11h38m07s"
     main(folder)
