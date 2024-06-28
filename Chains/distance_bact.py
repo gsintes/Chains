@@ -44,7 +44,7 @@ def load_data(path: str, frame_rate: int) -> pd.DataFrame:
         """Load the data from the database."""
         dbfile = os.path.join(path, "Tracking_Result/tracking.db")
         con = sqlite3.connect(dbfile)
-        df = pd.read_sql_query('SELECT xBody, yBody, bodyMajorAxisLength, imageNumber, id FROM tracking', con)
+        df = pd.read_sql_query('SELECT xBody, yBody, tBody, bodyMajorAxisLength, bodyMinorAxisLength, imageNumber, id FROM tracking', con)
         con.close()
         df["time"] = df["imageNumber"] / frame_rate
 
@@ -112,12 +112,12 @@ class DistanceCalculator:
 
         pool = mp.Pool(mp.cpu_count() -1)
         _ = pool.starmap(self.distance_pair, pairs)
-        
+
     def distance_pair(self, i: int, j: int) -> None:
         """Calculate the distance for all times."""
         data = self.data[self.data["id"].isin((i, j))]
         grouped = data.groupby("imageNumber")
-        
+
         grouped_data = pd.DataFrame()
         grouped_data["nb"] = grouped.imageNumber.value_counts()
         grouped_data = grouped_data[grouped_data.nb==2]

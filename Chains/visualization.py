@@ -63,6 +63,7 @@ if __name__=="__main__":
     parent_folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 11%"
     folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
     for folder in folder_list:
+        print(folder)
         try:
             vis = Visualisation(folder)
             vis.process()
