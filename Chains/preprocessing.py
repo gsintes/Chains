@@ -112,3 +112,9 @@ def contour_on_the_side(contour: List[List[List[int]]], im_shape: Tuple[int, ...
         if y == 0 or y == im_shape[1] - 1:
             return True
     return False
+
+def hex_to_rgb(value):
+        """Transform an hexadecimal image in RGB"""
+        value = value.lstrip('#')
+        lv = len(value)
+        return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
