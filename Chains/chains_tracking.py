@@ -20,6 +20,7 @@ def main(folder_path: str) -> str:
     image_list = [os.path.join(folder_path, file) for file
                 in os.listdir(folder_path) if file.endswith(".tif")]
     image_list.sort()
+    image_list = image_list[0:100]
     param_file = os.path.join(folder_path, "params.json")
     try:
         with open(param_file, "r") as f:
@@ -50,7 +51,7 @@ def main(folder_path: str) -> str:
 
     # Set up detector
 
-    visualisation_processed = False
+    visualisation_processed = True
     if visualisation_processed :
         processed_path = os.path.join(folder_path, "Figure", "Processed")
         shutil.rmtree(processed_path, ignore_errors=True)
@@ -105,5 +106,5 @@ if __name__=="__main__":
     #         with open(log_file, 'a') as file:
     #             exp_name = f.split("/")[-1]
     #             file.write(f"{exp_name} error at {datetime.now()}: {e.__repr__}\n")
-    folder = "/Users/sintes/Desktop/NASGuillaume/Chains/Chains 11%/2023-11-16_16h03m23s"
+    folder = "/Users/sintes/Desktop/2023-10-31_11h15m10s"
     main(folder)

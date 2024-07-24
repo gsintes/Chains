@@ -8,9 +8,23 @@ from random import sample
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import seaborn as sns
 
 import model
+
+mpl.use("pgf")
+plt.rcParams.update({
+    "text.usetex": True,     # use inline math for ticks
+    "pgf.preamble": "\n".join([
+         "\\usepackage{siunitx}",          # load additional packages
+         "\\usepackage{metalogo}",
+         "\\usepackage{unicode-math}",   # unicode math setup
+         ]),
+    "legend.title_fontsize": 20,
+    'xtick.labelsize': 20,
+    'ytick.labelsize': 20
+})
 
 def get_concentration(concentration_folder: str) -> float:
     """Get the concentration from the folder name."""
@@ -64,16 +78,16 @@ def velocity_histograms(data: pd.DataFrame, fig_folder: str) -> None:
     except FileExistsError:
         pass
 
-    plt.figure()
-    sns.histplot(data, x="velocity", hue="Concentration_LC", stat="density", common_norm=False)
-    plt.title("Velocities")
-    plt.savefig(os.path.join(hist_folder, "hist_general.png"))
-    plt.close()
+    # plt.figure()
+    # sns.histplot(data, x="velocity", hue="Concentration_LC", stat="density", common_norm=False)
+    # plt.title("Velocities")
+    # plt.savefig(os.path.join(hist_folder, "hist_general.png"))
+    # plt.close()
 
-    plt.figure()
-    sns.boxplot(data, y="velocity", hue="Concentration_LC")
-    plt.savefig(os.path.join(hist_folder, "box_plot.png"))
-    plt.close()
+    # plt.figure()
+    # sns.boxplot(data, y="velocity", hue="Concentration_LC")
+    # plt.savefig(os.path.join(hist_folder, "box_plot.png"))
+    # plt.close()
 
     for c in concentrations:
         try:
@@ -89,20 +103,25 @@ def velocity_histograms(data: pd.DataFrame, fig_folder: str) -> None:
         plt.title("Velocities")
         plt.savefig(os.path.join(c_folder, "hist_general.png"))
         plt.close()
+    c_data = data.copy()
+    c_data["n"] = c_data["chain_length"]
+    plt.figure()
+    g = sns.FacetGrid(c_data, col="n", col_wrap=3, height=2)
+    g.map(sns.histplot, "velocity", stat="density", common_norm=False)
+    # plt.xlabel(r"$V (\si{\micro\meter\usk\second^{-1}}$")
+    plt.savefig(os.path.join(hist_folder, "hist_grouped.png"))
+    plt.close()
 
+    for nb in chain_lengths:
+        nb_data = c_data.loc[c_data["chain_length"]==nb]
         plt.figure()
-        g = sns.FacetGrid(c_data, col="chain_length", col_wrap=3, height=2)
-        g.map(sns.histplot, "velocity", stat="density", common_norm=False)
-        plt.savefig(os.path.join(c_folder, "hist_grouped.png"))
+        sns.histplot(nb_data, x="velocity", stat="density")
+        plt.xlabel(r"$V (\si{\micro\meter\ \second ^{-1}})$", fontsize=20)
+        plt.title(f"$n={nb}$", fontsize=20)
+        plt.xlim(0, 80)
+        plt.tight_layout()
+        plt.savefig(os.path.join(hist_folder, f"hist_{nb}.pdf"))
         plt.close()
-
-        for nb in chain_lengths:
-            nb_data = c_data.loc[c_data["chain_length"]==nb]
-            plt.figure()
-            sns.histplot(nb_data, x="velocity", stat="density")
-            plt.title(f"Chain length : {nb}")
-            plt.savefig(os.path.join(c_folder, f"hist_{nb}.png"))
-            plt.close()
 
 def size_distribution(data: pd.DataFrame, fig_folder: str) -> None:
     """Plot the chain length distribution."""    
@@ -294,14 +313,14 @@ if __name__ == "__main__":
     data.to_csv(os.path.join(parent_folder, "chain_data.csv"))
     
     data = data[data["chain_length"] <= 8]
-    plot_force(data, fig_folder)
-    plot_proportion_sign(data, fig_folder)
-    plots_velocity_vs_length(data, fig_folder)
+    # plot_force(data, fig_folder)
+    # plot_proportion_sign(data, fig_folder)
+    # plots_velocity_vs_length(data, fig_folder)
     velocity_histograms(data, fig_folder)
-    size_distribution(data, fig_folder)
-    plot_vel_by_exp(data, fig_folder)
-    std_plot(data, fig_folder)
-    sample_size_plot(data, fig_folder)
-    plot_min(data, fig_folder)
-    plot_max(data, fig_folder)
+    # size_distribution(data, fig_folder)
+    # plot_vel_by_exp(data, fig_folder)
+    # std_plot(data, fig_folder)
+    # sample_size_plot(data, fig_folder)
+    # plot_min(data, fig_folder)
+    # plot_max(data, fig_folder)
     

@@ -7,7 +7,21 @@ import sqlite3
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+import seaborn as sns
 
+mpl.use("pgf")
+plt.rcParams.update({
+    "text.usetex": True,     # use inline math for ticks
+    "pgf.preamble": "\n".join([
+         "\\usepackage{siunitx}",          # load additional packages
+         "\\usepackage{metalogo}",
+         "\\usepackage{unicode-math}",   # unicode math setup
+         ]),
+    "legend.title_fontsize": 20,
+    'xtick.labelsize': 20,
+    'ytick.labelsize': 20
+})
 np.seterr(all='raise')
 
 class Analysis():
@@ -124,7 +138,7 @@ class Analysis():
         x = np.array(self.data["xBody"])
         y = np.array(self.data["yBody"])
         cov = np.cov(x, y)
-        val, vect = np.linalg.eig(cov) 
+        val, vect = np.linalg.eig(cov)
         val = list(val)
         i = val.index(max(val))
         self.main_axis = vect[:, i]
@@ -141,7 +155,7 @@ class Analysis():
     def process(self) -> pd.DataFrame:
         """Performs the analysis."""
         self.main_direction()
-        self.trace_image()
+        # self.trace_image()
         self.calculate_velocity()
         self.calculate_chain_length()
         Analysis.clean(self.data, self.scale, self.frameRate)
@@ -153,7 +167,7 @@ class Analysis():
             data: pd.DataFrame = self.data.loc[self.data["id"] == id]
             chain_length.append(int(min(data["chain_length"])))
             mean_vel.append(data["velocity"].mean())
-            signs.append(self.sign_trajectory(id))
+            signs.append(0)
         self.velocity_data = pd.DataFrame({"id": ids,
                              "chain_length": chain_length,
                              "velocity": mean_vel,
@@ -163,6 +177,22 @@ class Analysis():
         self.velocity_data["Single_vel"] = single_vel
         self.velocity_data["Normalized_vel"] = self.velocity_data["velocity"] / single_vel
         return self.velocity_data
+
+def plot_vel_time(data: pd.DataFrame, folder: str) -> None:
+    """Plot the velocity as a function of time."""
+    time = data["time"].unique().tolist()
+    time.sort()
+
+    vel = data.groupby("time")["velocity"].mean()
+
+    plt.figure(figsize=(5,3))
+    plt.plot(vel.index, vel)
+    plt.xlabel(r"$t (\si{\second})$", fontsize=20) 
+    plt.ylabel(r"$V$ (\si{\micro\meter})", fontsize=20)
+    plt.ylim(0,10)
+    plt.tight_layout()
+    plt.savefig(os.path.join(folder, "Figure/vel_time.pdf"))
+    plt.close()
 
 def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
     """Plot the grouped data."""
@@ -206,13 +236,14 @@ def plot_grouped_data(velocity_data: pd.DataFrame, folder: str) -> None:
 
 
 if __name__ == "__main__":
-    parent_folder = "/Volumes/Guillaume/Chains/Chains 11%"
-    folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
-    folder_list.sort()
-    for folder in folder_list:
-        print(folder)
-        analysis = Analysis(folder)
-        if len(analysis.data) > 0:
-            velocity_data = analysis.process()
-            velocity_data.to_csv(os.path.join(folder,"Tracking_Result/vel_data.csv"), index=None)
-            plot_grouped_data(velocity_data, folder)
+    # parent_folder = "/Volumes/Guillaume/Chains/Chains 11%"
+    # folder_list: List[str] = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f))]
+    # folder_list.sort()
+    # for folder in folder_list:
+    folder = "/Users/sintes/Desktop/ImageSeq"
+    analysis = Analysis(folder)
+    if len(analysis.data) > 0:
+        velocity_data = analysis.process()
+        # velocity_data.to_csv(os.path.join(folder,"Tracking_Result/vel_data.csv"), index=None)
+        # plot_grouped_data(velocity_data, folder)
+        plot_vel_time(analysis.data, folder)
