@@ -48,7 +48,7 @@ def normalize_velocity(data: pd.DataFrame) -> pd.DataFrame:
             data.loc[(data["Concentration_LC"]==concentration) & (data["Date"]==date), "Single_vel"] = single_vel
         data["Normalized_vel"] = data["velocity"] / data["Single_vel"]
     return data
-    
+
 def load_all_data(parent_folder: str) -> pd.DataFrame:
     """Load all the datas from the subfolders."""
     concentration_folders = [os.path.join(parent_folder, f) for f in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder,f)) and f.startswith("Chains")]
@@ -162,7 +162,10 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     """Generate the plots velocity vs chain length."""
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="velocity", linestyles="", errorbar="se", native_scale=True, c="k")
-    plt.savefig(os.path.join(fig_folder,"errorbar_raw_All.png"))
+    plt.xlabel(r"$n$", fontsize=20)
+    plt.ylabel(r"$V (\si{\micro\meter\ \second ^{-1}})$", fontsize=20)
+    plt.tight_layout()
+    plt.savefig(os.path.join(fig_folder,"errorbar_raw_All.pdf"))
     plt.close()
 
     plt.figure()
@@ -170,7 +173,7 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
     plt.xlabel("Chain length")
     plt.ylabel("$V / V_1$")
     plt.savefig(os.path.join(fig_folder,"errorbar_norm_All.png"))
-    
+
     plt.close()
 
     plt.figure()
@@ -234,7 +237,7 @@ def sampling(data: pd.DataFrame, nb: int = 10) -> List[Tuple[str, int, int]]:
             indexes = list(sub_data.index)
             subset = sample(indexes, nb)
             sub_data = sub_data.loc[subset]
-        
+
         for chain in sub_data.iterrows():
             res.append((chain[1]["Exp"], chain[1]["id"], l))
     return res
@@ -305,22 +308,35 @@ def plot_force(data: pd.DataFrame, fig_folder: str) -> None:
     plt.savefig(os.path.join(fig_folder, "force.png"))
     plt.close()
 
+def violin_plot(data: pd.DataFrame, fig_folder: str) -> None:
+    """Plot the violin plot of the velocities."""
+    plt.figure()
+    
+    sns.boxplot(data=data, x="chain_length", y="velocity", fliersize=0, native_scale=True)
+    sns.pointplot(data=data, x="chain_length", y="velocity", linestyles="", errorbar=None, native_scale=True, c="k")
+    plt.ylim((0, 40))
+    plt.xlabel(r"$n$", fontsize=20)
+    plt.ylabel(r"$V (\si{\micro\meter\ \second ^{-1}})$", fontsize=20)
+    plt.tight_layout()
+    plt.savefig(os.path.join(fig_folder, "violin.pdf"))
+    plt.close()
+
 if __name__ == "__main__":
     parent_folder = "/Volumes/Guillaume/Chains"
     fig_folder = os.path.join(parent_folder, "Figures")
     data = load_all_data(parent_folder)
 
     data.to_csv(os.path.join(parent_folder, "chain_data.csv"))
-    
+
     data = data[data["chain_length"] <= 8]
     # plot_force(data, fig_folder)
     # plot_proportion_sign(data, fig_folder)
     # plots_velocity_vs_length(data, fig_folder)
-    velocity_histograms(data, fig_folder)
+    violin_plot(data, fig_folder)
+    # velocity_histograms(data, fig_folder)
     # size_distribution(data, fig_folder)
     # plot_vel_by_exp(data, fig_folder)
     # std_plot(data, fig_folder)
     # sample_size_plot(data, fig_folder)
     # plot_min(data, fig_folder)
     # plot_max(data, fig_folder)
-    
