@@ -20,6 +20,7 @@ def main(folder_path: str) -> str:
     print(exp_name)
     window_size = 100
     block_tracker = BlockTracker(folder_path, window_size)
+    block_tracker.process()
 
     return f"{exp_name} done at {datetime.now()}\n"
 
@@ -47,6 +48,11 @@ class BlockTracker:
         except FileExistsError:
             shutil.rmtree(os.path.join(self.folder_path, "Tracking_Result"))
             os.makedirs(os.path.join(self.folder_path, "Tracking_Result"))
+
+    def process(self) -> None:
+        """Run tracking on the whole movie."""
+        nb_im = len(self.image_list)
+        print(nb_im)
         self.block_tracking(0)
         self.block_tracking(1)
 
