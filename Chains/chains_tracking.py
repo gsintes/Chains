@@ -4,6 +4,7 @@ import os
 from typing import List
 import shutil
 from datetime import datetime
+import multiprocessing as mp
 
 import cv2
 
@@ -12,6 +13,8 @@ from kalman_tracker import ObjectTracker
 from data import Result
 import data as dat
 import preprocessing
+
+import time
 
 class BlockTracker:
     """Run tracking on a movie by making block of images."""
@@ -22,6 +25,8 @@ class BlockTracker:
         self.image_list = [os.path.join(folder_path, file) for file
                     in os.listdir(folder_path) if file.endswith(".tif")]
         self.image_list.sort()
+        if self.block_size == -1:
+            self.block_size = len(self.image_list)
 
         self.tracked_path = os.path.join(self.folder_path, "Figure","Tracked")
         try:
@@ -49,7 +54,11 @@ class BlockTracker:
 
     def block_tracking(self, block_number: int) -> str:
         """Run tracking on a block of images."""
-        im_list = self.image_list[block_number * self.block_size :(block_number + 1) * self.block_size]
+        if (block_number + 1) * self.block_size < len(self.image_list):
+            im_list = self.image_list[block_number * self.block_size :(block_number + 1) * self.block_size]
+        else:
+            im_list = self.image_list[block_number * self.block_size :]
+
         max_int = int(preprocessing.max_intensity_video(im_list))
 
         # Load configuration
@@ -82,12 +91,14 @@ class BlockTracker:
             saver.add_data(im_data)
         shutil.move(os.path.join(os.getcwd(), f"tracking_{block_number}.db"), os.path.join(self.folder_path,"Tracking_Result"))
 
-def main(folder_path: str) -> str:
+def main(folder_path: str, block: bool=True) -> str:
     """Run tracking on a movie."""
     exp_name = folder_path.split("/")[-1]
     print(exp_name)
-    # window_size = 30 * 60 * 5
-    block_size = 100
+    if block:
+        block_size = 30 * 60 * 5
+    else:
+        block_size = -1
     block_tracker = BlockTracker(folder_path, block_size)
     block_tracker.process()
 
@@ -113,4 +124,6 @@ if __name__=="__main__":
     #             exp_name = f.split("/")[-1]
     #             file.write(f"{exp_name} error at {datetime.now()}: {e.__repr__}\n")
     folder = "/Users/sintes/Desktop/2023-10-31_11h15m10s"
-    main(folder)
+    b = time.time()
+    main(folder, True)
+    print(time.time()-b)
