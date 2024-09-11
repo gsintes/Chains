@@ -124,18 +124,18 @@ def velocity_histograms(data: pd.DataFrame, fig_folder: str) -> None:
         plt.close()
 
 def size_distribution(data: pd.DataFrame, fig_folder: str) -> None:
-    """Plot the chain length distribution."""    
+    """Plot the chain length distribution."""
     plt.figure()
     sns.histplot(data, x="chain_length", hue="Concentration_LC", multiple="dodge", discrete=True, shrink=0.8)
     plt.xlabel("Chain length")
-    plt.savefig(os.path.join(fig_folder, "chain_length_dist_nb.png")) 
+    plt.savefig(os.path.join(fig_folder, "chain_length_dist_nb.png"))
     plt.close()
 
     plt.figure()
     sns.histplot(data, x="chain_length", hue="Concentration_LC",
                  multiple="dodge", discrete=True, stat="density", common_norm=False, shrink=0.8)
     plt.xlabel("Chain length")
-    plt.savefig(os.path.join(fig_folder, "chain_length_dist_norm.png")) 
+    plt.savefig(os.path.join(fig_folder, "chain_length_dist_norm.png"))
     plt.close()
 
 def plot_proportion_sign(data: pd.DataFrame, fig_folder: str) -> None:
@@ -311,7 +311,7 @@ def plot_force(data: pd.DataFrame, fig_folder: str) -> None:
 def violin_plot(data: pd.DataFrame, fig_folder: str) -> None:
     """Plot the violin plot of the velocities."""
     plt.figure()
-    
+
     sns.boxplot(data=data, x="chain_length", y="velocity", fliersize=0, native_scale=True)
     sns.pointplot(data=data, x="chain_length", y="velocity", linestyles="", errorbar=None, native_scale=True, c="k")
     plt.ylim((0, 40))

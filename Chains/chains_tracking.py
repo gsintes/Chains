@@ -1,8 +1,8 @@
 """Program to run tracking in chain of bacteria."""
 
 import os
+from typing import List
 import shutil
-import json
 from datetime import datetime
 
 import cv2
@@ -13,79 +13,78 @@ from data import Result
 import data as dat
 import preprocessing
 
+import time
 def main(folder_path: str) -> str:
+    """Run tracking on a movie."""
     exp_name = folder_path.split("/")[-1]
     print(exp_name)
+    window_size = 100
+    block_tracker = BlockTracker(folder_path, window_size)
 
-    image_list = [os.path.join(folder_path, file) for file
-                in os.listdir(folder_path) if file.endswith(".tif")]
-    image_list.sort()
-    image_list = image_list[0:100]
-    param_file = os.path.join(folder_path, "params.json")
-    try:
-        with open(param_file, "r") as f:
-            parsed_params = json.load(f)
-            max_int = parsed_params["maxint"]
-    except FileNotFoundError:
-        max_int = int(preprocessing.max_intensity_video(image_list))
-        with open(param_file, 'w') as f:
-            f.write(json.dumps({"maxint": max_int}))
+    return f"{exp_name} done at {datetime.now()}\n"
 
-    tracked_path = os.path.join(folder_path, "Figure","Tracked")
-    try:
-        os.makedirs(tracked_path)
-    except FileExistsError:
-        pass
+class BlockTracker:
+    """Run tracking on a movie by making block of images."""
+    def __init__(self, folder_path: str, block_size: int) -> None:
+        self.folder_path = folder_path
+        self.block_size = block_size
 
-    try:
-        os.makedirs(os.path.join(folder_path,"Tracking_Result"))
-    except FileExistsError:
-        shutil.rmtree(os.path.join(folder_path,"Tracking_Result"))
-        os.makedirs(os.path.join(folder_path,"Tracking_Result"))
+        self.image_list = [os.path.join(folder_path, file) for file
+                    in os.listdir(folder_path) if file.endswith(".tif")]
+        self.image_list.sort()
 
-    # Load configuration
-    config = dat.Configuration()
-    params = config.read_toml(os.path.join(os.getcwd(),"cfg.toml"))
-    # Data saver
-    saver = Result(os.getcwd())
+        self.tracked_path = os.path.join(self.folder_path, "Figure","Tracked")
+        try:
+            os.makedirs(self.tracked_path)
+        except FileExistsError:
+            pass
+        try:
+            os.makedirs(os.path.join(self.folder_path, "Figure","Background"))
+        except FileExistsError:
+            pass
+        try:
+            os.makedirs(os.path.join(self.folder_path, "Tracking_Result"))
+        except FileExistsError:
+            shutil.rmtree(os.path.join(self.folder_path, "Tracking_Result"))
+            os.makedirs(os.path.join(self.folder_path, "Tracking_Result"))
+        self.block_tracking(0)
+        self.block_tracking(1)
 
-    # Set up detector
+    def block_tracking(self, block_number: int) -> str:
+        """Run tracking on a block of images."""
+        im_list = self.image_list[block_number * self.block_size :(block_number + 1) * self.block_size]
+        max_int = int(preprocessing.max_intensity_video(im_list))
 
-    visualisation_processed = True
-    if visualisation_processed :
-        processed_path = os.path.join(folder_path, "Figure", "Processed")
-        shutil.rmtree(processed_path, ignore_errors=True)
-        os.makedirs(processed_path)
-        detector = ChainDetector(params, processed_path, visualisation=True)
-    else:
+        # Load configuration
+        config = dat.Configuration()
+        params = config.read_toml(os.path.join(os.getcwd(),"cfg.toml"))
+        # Data saver
+        saver = Result(os.getcwd(), block_number)
+
+        # Set up detector
         detector = ChainDetector(params, "", visualisation=False)
 
-    bg_path = os.path.join(folder_path, "Figure/background.png")
-    if os.path.isfile(bg_path):
-        background = cv2.imread(bg_path, cv2.IMREAD_UNCHANGED)
-    else:
-        background = preprocessing.get_background(image_list[0:100], max_int)
-        cv2.imwrite(bg_path, background)
-    detector.set_background(background)
+        bg_path = os.path.join(self.folder_path, f"Figure/Background/background_{block_number}.png")
+        if os.path.isfile(bg_path):
+            background = cv2.imread(bg_path, cv2.IMREAD_UNCHANGED)
+        else:
+            background = preprocessing.get_background(im_list, max_int)
+            cv2.imwrite(bg_path, background)
+        detector.set_background(background)
 
 
-    # Set up tracker
-    tracker = ObjectTracker(params, detector, tracked_path)
+        # # Set up tracker
+        tracker = ObjectTracker(params, detector, self.block_size * block_number, self.tracked_path)
 
-    im_data = tracker.initialize(preprocessing.convert_16to8bits(image_list[0], max_int))
-    saver.add_data(im_data)
-
-    count = 0
-    for i, im in enumerate(image_list[1:]):
-        per = 100 * i / len(image_list)
-        if per > count + 5:
-            print(f"{per:.2f}2%")
-            count += 5
-        frame = preprocessing.convert_16to8bits(im, max_int)
-        im_data = tracker.process(frame)
+        im_data = tracker.initialize(preprocessing.convert_16to8bits(im_list[0], max_int))
         saver.add_data(im_data)
-    shutil.move(os.path.join(os.getcwd(), "tracking.db"), os.path.join(folder_path,"Tracking_Result"))
-    return f"{exp_name} done at {datetime.now()}\n"
+
+        for i, im in enumerate(im_list[1:]):
+            frame = preprocessing.convert_16to8bits(im, max_int)
+            im_data = tracker.process(frame)
+            saver.add_data(im_data)
+        shutil.move(os.path.join(os.getcwd(), f"tracking_{block_number}.db"), os.path.join(self.folder_path,"Tracking_Result"))
+
 
 if __name__=="__main__":
     # parent_folder = "/Users/sintes/Desktop/NASGuillaume/5min/2024-03-26_14h15m09s"

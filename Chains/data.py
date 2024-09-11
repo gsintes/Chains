@@ -130,12 +130,16 @@ class Result():
         self.cnx.commit()
         cursor.close()
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str, nb: int=-1) -> None:
+        if nb == -1:
+            name = "tracking.db"
+        else:
+            name = f"tracking_{nb}.db"
         try:
-            os.remove(os.path.join(path, "tracking.db"))
+            os.remove(os.path.join(path, name))
         except FileNotFoundError:
             pass
-        self.cnx = sqlite3.connect(os.path.join(path,"tracking.db"))
+        self.cnx = sqlite3.connect(os.path.join(path, name))
         cursor = self.cnx.cursor()
         cursor.execute("CREATE TABLE tracking (xBody REAL, yBody REAL, tBody REAL,"
                        "areaBody REAL, perimeterBody REAL,"

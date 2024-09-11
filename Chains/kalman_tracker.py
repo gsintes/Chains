@@ -55,7 +55,9 @@ class Particle:
 class ObjectTracker:
     """Track the objects in a video and solve the assignment issue."""
     def __init__(self, params: Dict[str, int],
-                 detector: BaseDetector, save_folder: str = "",
+                 detector: BaseDetector,
+                 initial_im_nb: int = 0,
+                 save_folder: str = "",
                  visualization: bool = True):
         self.particles: List[Particle] = []
         self.params = params
@@ -64,7 +66,7 @@ class ObjectTracker:
         self.save_folder = save_folder
         self.visualization = visualization
         self.detector = detector
-        self.im = 0
+        self.im = initial_im_nb
 
 
     def initialize(self, image: np.ndarray) -> List[Dict[str, float]]:
