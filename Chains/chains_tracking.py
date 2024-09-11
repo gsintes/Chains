@@ -13,17 +13,6 @@ from data import Result
 import data as dat
 import preprocessing
 
-import time
-def main(folder_path: str) -> str:
-    """Run tracking on a movie."""
-    exp_name = folder_path.split("/")[-1]
-    print(exp_name)
-    window_size = 100
-    block_tracker = BlockTracker(folder_path, window_size)
-    block_tracker.process()
-
-    return f"{exp_name} done at {datetime.now()}\n"
-
 class BlockTracker:
     """Run tracking on a movie by making block of images."""
     def __init__(self, folder_path: str, block_size: int) -> None:
@@ -52,9 +41,11 @@ class BlockTracker:
     def process(self) -> None:
         """Run tracking on the whole movie."""
         nb_im = len(self.image_list)
-        print(nb_im)
-        self.block_tracking(0)
-        self.block_tracking(1)
+        block_nb = 0
+        while block_nb * self.block_size < nb_im:
+            print(f"Block {block_nb}")
+            self.block_tracking(block_nb)
+            block_nb += 1
 
     def block_tracking(self, block_number: int) -> str:
         """Run tracking on a block of images."""
@@ -85,12 +76,22 @@ class BlockTracker:
         im_data = tracker.initialize(preprocessing.convert_16to8bits(im_list[0], max_int))
         saver.add_data(im_data)
 
-        for i, im in enumerate(im_list[1:]):
+        for im in im_list[1:]:
             frame = preprocessing.convert_16to8bits(im, max_int)
             im_data = tracker.process(frame)
             saver.add_data(im_data)
         shutil.move(os.path.join(os.getcwd(), f"tracking_{block_number}.db"), os.path.join(self.folder_path,"Tracking_Result"))
 
+def main(folder_path: str) -> str:
+    """Run tracking on a movie."""
+    exp_name = folder_path.split("/")[-1]
+    print(exp_name)
+    # window_size = 30 * 60 * 5
+    block_size = 100
+    block_tracker = BlockTracker(folder_path, block_size)
+    block_tracker.process()
+
+    return f"{exp_name} done at {datetime.now()}\n"
 
 if __name__=="__main__":
     # parent_folder = "/Users/sintes/Desktop/NASGuillaume/5min/2024-03-26_14h15m09s"
