@@ -13,18 +13,18 @@ import seaborn as sns
 
 import model
 
-mpl.use("pgf")
-plt.rcParams.update({
-    "text.usetex": True,     # use inline math for ticks
-    "pgf.preamble": "\n".join([
-         "\\usepackage{siunitx}",          # load additional packages
-         "\\usepackage{metalogo}",
-         "\\usepackage{unicode-math}",   # unicode math setup
-         ]),
-    "legend.title_fontsize": 20,
-    'xtick.labelsize': 20,
-    'ytick.labelsize': 20
-})
+# mpl.use("pgf")
+# plt.rcParams.update({
+#     "text.usetex": True,     # use inline math for ticks
+#     "pgf.preamble": "\n".join([
+#          "\\usepackage{siunitx}",          # load additional packages
+#          "\\usepackage{metalogo}",
+#          "\\usepackage{unicode-math}",   # unicode math setup
+#          ]),
+#     "legend.title_fontsize": 20,
+#     'xtick.labelsize': 20,
+#     'ytick.labelsize': 20
+# })
 
 def get_concentration(concentration_folder: str) -> float:
     """Get the concentration from the folder name."""
@@ -170,9 +170,10 @@ def plots_velocity_vs_length(data: pd.DataFrame, fig_folder: str) -> None:
 
     plt.figure()
     sns.pointplot(data=data, x="chain_length", y="Normalized_vel", linestyles="", errorbar="se", native_scale=True, c="k")
-    plt.xlabel("Chain length")
-    plt.ylabel("$V / V_1$")
-    plt.savefig(os.path.join(fig_folder,"errorbar_norm_All.png"))
+    plt.xlabel(r"$n$", fontsize=20)
+    plt.ylabel(r"$V/V_1$", fontsize=20)
+    plt.tight_layout()
+    plt.savefig(os.path.join(fig_folder,"errorbar_norm_All.pdf"))
 
     plt.close()
 
@@ -312,27 +313,45 @@ def violin_plot(data: pd.DataFrame, fig_folder: str) -> None:
     """Plot the violin plot of the velocities."""
     plt.figure()
 
-    sns.boxplot(data=data, x="chain_length", y="velocity", fliersize=0, native_scale=True)
+    sns.catplot(data=data, x="chain_length", y="velocity", kind="boxen", native_scale=True)
+    # sns.histplot(data=data, x="chain_length", y="velocity")
     sns.pointplot(data=data, x="chain_length", y="velocity", linestyles="", errorbar=None, native_scale=True, c="k")
     plt.ylim((0, 40))
-    plt.xlabel(r"$n$", fontsize=20)
-    plt.ylabel(r"$V (\si{\micro\meter\ \second ^{-1}})$", fontsize=20)
+    # plt.xlabel(r"$n$", fontsize=20)
+    # plt.ylabel(r"$V (\si{\micro\meter\ \second ^{-1}})$", fontsize=20)
     plt.tight_layout()
     plt.savefig(os.path.join(fig_folder, "violin.pdf"))
     plt.close()
 
 if __name__ == "__main__":
-    parent_folder = "/Volumes/Guillaume/Chains"
-    fig_folder = os.path.join(parent_folder, "Figures")
-    data = load_all_data(parent_folder)
+    # parent_folder = "/Volumes/Guillaume/Chains"
+    # fig_folder = os.path.join(parent_folder, "Figures")
+    # data = load_all_data(parent_folder)
 
-    data.to_csv(os.path.join(parent_folder, "chain_data.csv"))
+    # data.to_csv(os.path.join(parent_folder, "chain_data.csv"))
+    data = pd.read_csv("/Users/sintes/Desktop/chain_data.csv")
 
     data = data[data["chain_length"] <= 8]
+
+    data["Type"] = "Exp"
+    simu = pd.read_csv("/Users/sintes/Desktop/FromDataEvenSpacing/data.csv")
+    simu = simu[simu["chain_length"] <= 8]
+    simu["Type"] = "Simu"
+    simu = simu[simu.step <=500]
+    simu["velocity"] = simu["vel"]
+    simu = simu.drop_duplicates(("Simu_nb", "id"))
+    data=pd.concat([data, simu], ignore_index=True)
+    data=data[["chain_length", "velocity", "Type"]]
+
+    plt.figure()
+    sns.violinplot(data=data, x="chain_length", y="velocity", hue="Type", split=True, native_scale=True, inner=None, fill=False, cut=0)
+    # sns.stripplot(data=data, x="chain_length", y="velocity", hue="Type", native_scale=True)
+    sns.pointplot(data=data, x="chain_length", y="velocity", hue="Type", linestyles="", errorbar=None, native_scale=True, dodge=0.2)
+    plt.show(block=True)
     # plot_force(data, fig_folder)
     # plot_proportion_sign(data, fig_folder)
     # plots_velocity_vs_length(data, fig_folder)
-    violin_plot(data, fig_folder)
+    # violin_plot(data, fig_folder)
     # velocity_histograms(data, fig_folder)
     # size_distribution(data, fig_folder)
     # plot_vel_by_exp(data, fig_folder)

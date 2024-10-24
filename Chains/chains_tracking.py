@@ -18,9 +18,10 @@ import time
 
 class BlockTracker:
     """Run tracking on a movie by making block of images."""
-    def __init__(self, folder_path: str, block_size: int) -> None:
+    def __init__(self, folder_path: str, block_size: int, downsampling) -> None:
         self.folder_path = folder_path
         self.block_size = block_size
+        self.downsampling = downsampling
 
         self.image_list = [os.path.join(folder_path, file) for file
                     in os.listdir(folder_path) if file.endswith(".tif")]
@@ -54,6 +55,7 @@ class BlockTracker:
 
     def block_tracking(self, block_number: int) -> str:
         """Run tracking on a block of images."""
+        b = time.time()
         if (block_number + 1) * self.block_size < len(self.image_list):
             im_list = self.image_list[block_number * self.block_size :(block_number + 1) * self.block_size]
         else:
@@ -85,21 +87,23 @@ class BlockTracker:
         im_data = tracker.initialize(preprocessing.convert_16to8bits(im_list[0], max_int))
         saver.add_data(im_data)
 
-        for im in im_list[1:]:
+        for im in im_list[1::self.downsampling]:
             frame = preprocessing.convert_16to8bits(im, max_int)
             im_data = tracker.process(frame)
             saver.add_data(im_data)
         shutil.move(os.path.join(os.getcwd(), f"tracking_{block_number}.db"), os.path.join(self.folder_path,"Tracking_Result"))
+        print(time.time()-b)
 
-def main(folder_path: str, block: bool=True) -> str:
+def main(folder_path: str, block: bool=True, downsampling=1) -> str:
     """Run tracking on a movie."""
     exp_name = folder_path.split("/")[-1]
+    fps = 30
     print(exp_name)
     if block:
-        block_size = 30 * 60 * 5
+        block_size = fps * 60 * 5
     else:
         block_size = -1
-    block_tracker = BlockTracker(folder_path, block_size)
+    block_tracker = BlockTracker(folder_path, block_size, downsampling)
     block_tracker.process()
 
     return f"{exp_name} done at {datetime.now()}\n"
@@ -123,7 +127,7 @@ if __name__=="__main__":
     #         with open(log_file, 'a') as file:
     #             exp_name = f.split("/")[-1]
     #             file.write(f"{exp_name} error at {datetime.now()}: {e.__repr__}\n")
-    folder = "/Users/sintes/Desktop/2023-10-31_11h15m10s"
+    folder = "~/NAS/ChainFormation/2024-05-08_14h07m56s"
     b = time.time()
-    main(folder, True)
+    main(folder, True, downsampling=3)
     print(time.time()-b)
